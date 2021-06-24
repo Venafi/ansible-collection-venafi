@@ -1,0 +1,13 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea
+venv
+venv27
+.venv37
+venafi_certificate_*.json
+*_credentials.yml
+credentials.yml
+vault-password.txt
+tests/library
+tests/roles/
+*.retry
+.cache
