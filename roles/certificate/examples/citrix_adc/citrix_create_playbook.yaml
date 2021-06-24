@@ -1,0 +1,151 @@
+- name: Create Critx ADC Application
+  hosts: localhost
+  connection: local
+  collections: citrix.adc
+
+  vars_files:
+    - variables.yaml
+
+  roles:
+    - role: venafi.ansible_role_venafi
+
+      certificate_common_name: "{{ test_site.name }}.{{ test_site.domain }}"
+      certificate_alt_name: "DNS:{{ test_site.name }}.{{ test_site.domain }}"
+      certificate_privatekey_type: "RSA"
+      certificate_privatekey_size: "2048"
+      certificate_chain_option: "last"
+
+      certificate_cert_dir: "./tmp"
+      certificate_cert_path: "./tmp/{{ cert_name }}"
+      certificate_chain_path: "./tmp/{{ chain_name }}"
+      certificate_privatekey_path: "./tmp/{{ key_name }}"
+      certificate_copy_private_key_to_remote: false
+
+      certificate_remote_execution: false
+      certificate_remote_privatekey_path: "./tmp/{{ key_name }}.remote"
+      certificate_remote_cert_path: "./tmp/{{ cert_name }}.remote"
+      certificate_remote_chain_path: "./tmp/{{ chain_name }}.remote"
+
+  tasks:
+    - name: Copy Private Key to Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        filename: "{{ key_name }}"
+        filelocation: "/nsconfig/ssl/"
+        filecontent: "{{ lookup('file', './tmp/' + key_name) }}"
+      delegate_to: localhost
+
+    - name: Copy Certificate to Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        filename: "{{ cert_name }}"
+        filelocation: "/nsconfig/ssl/"
+        filecontent: "{{ lookup('file', './tmp/' + cert_name + '.remote') }}"
+      delegate_to: localhost
+
+    - name: Copy CA Bundle to Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        filename: "{{ chain_name }}"
+        filelocation: "/nsconfig/ssl"
+        filecontent: "{{ lookup('file', './tmp/' + chain_name + '.remote') }}"
+      delegate_to: localhost
+
+    - name: Create Certkey on Citrix ADC {{ adc_address }}
+      citrix_adc_ssl_certkey:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        certkey: "{{ test_site.name }}.{{ test_site.domain }}_certkey"
+        cert: "/nsconfig/ssl/{{ cert_name }}"
+        key: "/nsconfig/ssl/{{ key_name }}"
+       
+    - name: Create service-http-1 on Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        name: service-http-1
+        servicetype: HTTP
+        ip: "{{ http_service }}"
+        ipaddress: "{{ http_service }}"
+        port: "{{ port1 }}"
+      delegate_to: localhost
+
+    - name: Create service-http-2 on Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        name: service-http-2
+        servicetype: HTTP
+        ip: "{{ http_service }}"
+        ipaddress: "{{ http_service }}"
+        port: "{{ port2 }}"
+      delegate_to: localhost
+
+    - name: Create service-http-3 on Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        name: service-http-3
+        servicetype: HTTP
+        ip: "{{ http_service }}"
+        ipaddress: "{{ http_service }}"
+        port: "{{ port3 }}"
+      delegate_to: localhost
+
+    - name: Create lb vserver on Citrix ADC {{ adc_address }}
+      citrix_adc_lb_vserver:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: present
+        name: "vs-{{ test_site.name }}.{{ test_site.domain }}" 
+        servicetype: SSL
+        timeout: 2
+        ipv46: "{{ adc_virtual_ip }}"
+        port: "{{ adc_virtual_port }}"
+        lbmethod: ROUNDROBIN
+        ssl_certkey: "{{ test_site.name }}.{{ test_site.domain }}_certkey" 
+        servicebindings:
+          - servicename: service-http-1
+            weight: 80
+          - servicename: service-http-2
+            weight: 60
+          - servicename: service-http-3
+            weight: 40
+        disabled: no
+      delegate_to: localhost
+
+

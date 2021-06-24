@@ -1,0 +1,25 @@
+# Generates certificates on remote host
+---
+- name: "Enroll Venafi certificate on remote host"
+  community.venafi.venafi_certificate:
+    url: "{{ venafi.url | default(omit) }}"
+    token: "{{ venafi.token | default(omit) }}"
+    zone: "{{ venafi.zone | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+    cert_path: "{{ certificate_cert_path }}"
+    chain_path: "{{ certificate_chain_path | default(omit) }}"
+    privatekey_path: "{{ certificate_privatekey_path | default(omit) }}"
+    privatekey_type: "{{ certificate_privatekey_type | default(omit) }}"
+    privatekey_size: "{{ certificate_privatekey_size | default(omit) }}"
+    common_name: "{{ certificate_common_name }}"
+    alt_name: "{{ certificate_alt_name | default([]) }}"
+    before_expired_hours: "{{ certificate_before_expired_hours | default(omit) }}"
+    force: "{{ certificate_force if certificate_force is defined else false }}"
+  register: certout
+- name: "dump test output"
+  debug:
+    msg: "{{ certout }}"

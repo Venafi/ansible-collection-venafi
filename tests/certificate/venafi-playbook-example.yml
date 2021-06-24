@@ -1,0 +1,169 @@
+---
+# We need Docker provisioning only for demo purpose
+- name: "Bring up Docker containers for Docker connection inventory iface"
+  hosts: localhost
+  roles:
+    - role: provision_docker
+      provision_docker_privileged: true
+      provision_docker_inventory_group: "{{ groups['robots'] }}"
+      provision_docker_use_docker_connection: true
+      when: docker_demo is defined
+
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Set random CN fact"
+      set_fact:
+        cn: "{{ 10000|random }}"
+
+- hosts: robots
+  vars:
+    credentials_file: "../credentials.yml"
+    # Use Ansible host FQDN for certificate common name
+    certificate_common_name: "{{ ansible_fqdn }}-{{ cn }}.venafi.example.com"
+    # Use ansible default IP for DNS
+    certificate_alt_name: "IP:{{ansible_default_ipv4.address}},DNS:{{ ansible_fqdn }}-{{ cn }}-alt.venafi.example.com"
+
+    # Directory where to place certificates
+    certificate_cert_dir: "/tmp/ansible/etc/ssl/{{ certificate_common_name }}"
+    # Paths for certficaite and keys
+    certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+    certificate_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+    certificate_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+    certificate_csr_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"
+
+    # Where to execute venafi_certificate module. If set to false, certificate will be
+    # created on ansible master host and then copied to the remote server
+    certificate_remote_execution: false
+    # remote location where to place the certificate_
+    certificate_remote_cert_path: "/etc/ssl/{{ certificate_common_name }}.pem"
+    certificate_remote_chain_path: "/etc/ssl/{{ certificate_common_name }}.chain.pem"
+    certificate_remote_privatekey_path: "/etc/ssl/{{ certificate_common_name }}.key"
+    # Set to false, if you don't want to copy private key to remote location
+    certificate_copy_private_key_to_remote: true
+
+    # Modify default before expire hours variable
+    certificate_before_expired_hours: 100
+
+    # Set to true if you want forcly renew certificate
+    certificate_force: false
+
+  tasks:
+    - name: "Include vars of {{ credentials_file }} into the venafi variable."
+      include_vars:
+        file: "{{ credentials_file }}"
+        name: venafi
+
+    - name: "Create directory {{ certificate_cert_dir }}"
+      local_action:
+        module: file
+        path: "{{ certificate_cert_dir }}"
+        state: directory
+
+    - name: "Enroll Venafi certificate on local host"
+      local_action:
+        module: community.venafi.venafi_certificate
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_cert_path }}"
+        chain_path: "{{ certificate_chain_path | default(omit) }}"
+        privatekey_path: "{{ certificate_privatekey_path | default(omit) }}"
+        privatekey_size: "{{ certificate_privatekey_size | default(omit) }}"
+        common_name: "{{ certificate_common_name }}"
+      register: certout
+    - name: "Certificate is in following state:"
+      debug:
+        msg: "{{ certout }}"
+
+
+    - name: "Copy Venafi certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+      copy:
+        src: "{{ certificate_cert_path }}"
+        dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+
+    - name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+      copy:
+        src: "{{ certificate_privatekey_path }}"
+        dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+      when: certificate_copy_private_key_to_remote
+
+    - name: "Copy Venafi certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+      copy:
+        src: "{{ certificate_chain_path }}"
+        dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+      when: certificate_chain_path is defined
+
+    - name: "Install vcert for verification"
+      pip:
+        name:
+          - vcert
+
+    - name: "Verify Venafi certificate on remote host"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}"
+      check_mode: true
+      register: cert_validation
+
+    - debug:
+        msg: "Certificate {{ certificate_common_name }} is not in valid state: {{ cert_validation.changed_msg }}"
+      when: cert_validation is changed
+
+    - name: "Example verification which will always fail with debug message"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}-fail-check"
+      check_mode: true
+      register: cert_validation_failed
+
+    - debug:
+        msg: "Certificate {{ certificate_common_name }} is not in valid state: {{ cert_validation_failed.changed_msg }}"
+      when: cert_validation_failed is changed
+
+    - name: "Fail playbook if cert_validation_failed is not in changed state"
+      fail:
+        msg: "Certificate should be in changed stage but it is not"
+      when: cert_validation_failed is not changed
+
+    - name: "This one shouldn't enroll new Venafi certificate on remote host because it's valid"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}"
+      register: result
+
+    - name: "Certificate is in following state:"
+      debug:
+        msg: "{{ result }}"

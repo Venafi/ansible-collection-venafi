@@ -1,0 +1,39 @@
+---
+# Credentials.
+venafi:
+  # Venafi Platform connection parameters
+  user: 'admin'
+  password: 'secret'
+  url: 'https://venafi.example.com/vedsdk'
+  zone: "devops\\vcert"
+  # Venafi Cloud connection parameters
+  # token: 'enter-cloud-api-token-here'
+  # zone: 'Default'
+  # Test mode parameter
+  # test_mode: true
+
+# Certificate parameters. These are just examples.
+certificate_common_name: "{{ ansible_fqdn }}"
+certificate_alt_name: "IP:192.168.1.1,DNS:www.venafi.example.com,DNS:m.venafi.example.com,email:e@venafi.com,email:e2@venafi.com,IP Address:192.168.2.2"
+
+certificate_privatekey_type: "RSA"
+certificate_privatekey_size: "2048"
+certificate_privatekey_curve: "P251"
+certificate_privatekey_passphrase: "password"
+certificate_chain_option: "last"
+
+certificate_cert_dir: "/etc/ssl/{{ certificate_common_name }}"
+certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+certificate_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+certificate_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+certificate_csr_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"
+
+# Where to execute venafi_certificate module. If set to false certificate will be
+# created on ansible master host and then copied to the remote server
+certificate_remote_execution: false
+#  remote location where to place the certificate_
+certificate_remote_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+certificate_remote_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+certificate_remote_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+# Set to false if you don't want to copy private key to remote location
+certificate_copy_private_key_to_remote: true

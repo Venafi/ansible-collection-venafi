@@ -1,0 +1,57 @@
+# Locally generate certificate
+# Copy files to remote host from inventory
+# Generates certificates on remote host
+# TODO: maybe rewrite to delegate to be able to register certificate from any host?
+---
+- name: "Create directory {{ certificate_cert_dir }}"
+  file:
+    path: "{{ certificate_cert_dir }}"
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+
+- name: "Enroll Venafi certificate on local host"
+  community.venafi.venafi_certificate:
+    url: "{{ venafi.url | default(omit) }}"
+    token: "{{ venafi.token | default(omit) }}"
+    zone: "{{ venafi.zone | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    cert_path: "{{ certificate_cert_path }}"
+    chain_path: "{{ certificate_chain_path | default(omit) }}"
+    privatekey_path: "{{ certificate_privatekey_path | default(omit) }}"
+    privatekey_type: "{{ certificate_privatekey_type | default(omit) }}"
+    privatekey_size: "{{ certificate_privatekey_size | default(omit) }}"
+    privatekey_curve: "{{ certificate_privatekey_curve | default(omit) }}"
+    common_name: "{{ certificate_common_name }}"
+    alt_name: "{{ certificate_alt_name | default([]) }}"
+    before_expired_hours: "{{ certificate_before_expired_hours if certificate_before_expired_hours is defined else 72 }}"
+    force: "{{ certificate_force if certificate_force is defined else false }}"
+  delegate_to: localhost
+  register: certout
+- name: "dump test output"
+  debug:
+    msg: "{{ certout }}"
+
+- name: "Copy Venafi certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+  copy:
+    src: "{{ certificate_cert_path }}"
+    dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+    mode: 0644
+
+- name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+  copy:
+    src: "{{ certificate_privatekey_path }}"
+    dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+    mode: 0600
+  when: certificate_copy_private_key_to_remote
+
+- name: "Copy Venafi certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+  copy:
+    src: "{{ certificate_chain_path }}"
+    dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+    mode: 0644
+  when: certificate_chain_path is defined

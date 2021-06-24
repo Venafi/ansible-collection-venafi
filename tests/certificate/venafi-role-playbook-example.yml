@@ -1,0 +1,109 @@
+---
+# We need Docker provisioning only for demo purpose
+- name: "Bring up Docker containers for Docker connection inventory iface"
+  hosts: localhost
+  roles:
+    - role: provision_docker
+      provision_docker_privileged: true
+      provision_docker_inventory_group: "{{ groups['robots'] }}"
+      provision_docker_use_docker_connection: true
+      when: docker_demo is defined
+
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Set CN fact"
+      set_fact:
+        cn: "{{ 10000|random }}"
+
+- hosts: robots
+  vars:
+    certificate_common_name: "{{ ansible_fqdn }}-{{ cn }}.venafi.example.com"
+    certificate_alt_name: "IP:{{ansible_default_ipv4.address}},DNS:{{ ansible_fqdn }}-{{ cn }}-alt.venafi.example.com"
+    certificate_cert_dir: "/tmp/ansible/etc/ssl/{{ certificate_common_name }}"
+    certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+    certificate_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+    certificate_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+    certificate_csr_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"
+
+    # Where to execute venafi_certificate module. If set to false certificate will be
+    # created on Ansible master host and then copied to the remote server
+    certificate_remote_execution: false
+    #  remote location where to place the certificate.
+    certificate_remote_cert_dir: "/etc/ssl"
+    certificate_remote_cert_path: "{{ certificate_remote_cert_dir }}/{{ certificate_common_name }}.pem"
+    certificate_remote_chain_path: "{{ certificate_remote_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+    certificate_remote_privatekey_path: "{{ certificate_remote_cert_dir }}/{{ certificate_common_name }}.key"
+    # Set to false if you don't want to copy private key to remote location
+    certificate_copy_private_key_to_remote: true
+
+  roles:
+    - role: "community.venafi.certificate"
+
+  #  This tasks needed only for certificate verification
+  tasks:
+    - name: "Install vcert for verification"
+      pip:
+        name:
+          - vcert
+    - name: "Verify Venafi certificate on remote host"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}"
+        alt_name: "{{ certificate_alt_name }}"
+      check_mode: true
+      register: cert_validation
+
+    - debug:
+        msg: "Certificate {{ certificate_common_name }} is not in valid state: {{ cert_validation.changed_msg }}"
+      when: cert_validation is changed
+
+    - name: "Example verification which will always fail with debug message"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}-fail-check"
+        alt_name: "{{ certificate_alt_name }}"
+      check_mode: true
+      register: cert_validation_failed
+
+    - debug:
+        msg: "Certificate {{ certificate_common_name }} is not in valid state: {{ cert_validation_failed.changed_msg }}"
+      when: cert_validation_failed is changed
+
+    - name: "This one shouldn't enroll new Venafi certificate on remote host because it's valid"
+      community.venafi.venafi_certificate:
+        url: "{{ venafi.url | default(omit) }}"
+        token: "{{ venafi.token | default(omit) }}"
+        zone: "{{ venafi.zone | default(omit) }}"
+        test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+        user: "{{ venafi.user | default(omit) }}"
+        password: "{{ venafi.password | default(omit) }}"
+        trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+        cert_path: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+        chain_path: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+        privatekey_path: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+        common_name: "{{ certificate_common_name }}"
+      register: result
+
+    - name: "Certificate is in following state:"
+      debug:
+        msg: "{{ result }}"

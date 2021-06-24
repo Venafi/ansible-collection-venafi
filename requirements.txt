@@ -1,0 +1,3 @@
+vcert>=0.11
+ansible
+cryptography

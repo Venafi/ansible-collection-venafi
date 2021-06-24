@@ -1,0 +1,102 @@
+- name: Create F5 Application
+  hosts: localhost
+  connection: local
+
+  vars_files:
+    - variables.yaml
+
+  roles:
+    - role: venafi.ansible_role_venafi
+
+      certificate_common_name: "{{ test_site.name }}.{{ test_site.domain }}"
+      certificate_alt_name: "DNS:{{ test_site.name }}.{{ test_site.domain }}"
+      certificate_privatekey_type: "RSA"
+      certificate_privatekey_size: "2048"
+      certificate_chain_option: "last"
+
+      certificate_cert_dir: "./tmp"
+      certificate_cert_path: "./tmp/{{ cert_name }}"
+      certificate_chain_path: "./tmp/{{ chain_name }}"
+      certificate_privatekey_path: "./tmp/{{ key_name }}"
+      certificate_copy_private_key_to_remote: false
+
+      certificate_remote_execution: false
+      certificate_remote_privatekey_path: "./tmp/{{ key_name }}.remote"
+      certificate_remote_cert_path: "./tmp/{{ cert_name }}.remote"
+      certificate_remote_chain_path: "./tmp/{{ chain_name }}.remote"
+
+  tasks:
+    - name: Create Private Key on F5 BIG-IP {{ f5_address }}
+      bigip_ssl_key:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "{{ key_name }}"
+        partition: "{{ f5_partition }}"
+        content: "{{ lookup('file', './tmp/' + key_name) }}"
+      delegate_to: localhost
+
+    - name: Create Certificate on F5 BIG-IP {{ f5_address }}
+      bigip_ssl_certificate:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "{{ cert_name }}"
+        partition: "{{ f5_partition }}"
+        content: "{{ lookup('file', './tmp/' + cert_name + '.remote') }}"
+      delegate_to: localhost
+
+    - name: Create CA Bundle on F5 BIG-IP {{ f5_address }}
+      bigip_ssl_certificate:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "{{ chain_name }}"
+        partition: "{{ f5_partition }}"
+        content: "{{ lookup('file', './tmp/' + chain_name + '.remote') }}"
+      delegate_to: localhost
+
+    - name: Create Client SSL Profile on F5 BIG-IP {{ f5_address }}
+      bigip_profile_client_ssl:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "clientssl_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+        parent: "clientssl"
+        cert_key_chain:
+        - cert: "{{ cert_name }}"
+          key: "{{ key_name }}"
+          chain: "{{ chain_name }}"
+      delegate_to: localhost
+
+    - name: Create Pool on F5 BIG-IP {{ f5_address }}
+      bigip_pool:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "pool_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+        lb_method: round-robin
+      delegate_to: localhost
+
+    - name: Add Pool Members on F5 BIG-IP {{ f5_address }}
+      bigip_pool_member:
+        state: present
+        provider: "{{ f5_provider }}"
+        partition: "{{ f5_partition }}"
+        host: "{{ item.host }}"
+        port: "{{ item.port }}"
+        pool: "pool_{{ test_site.name }}"
+      with_items: "{{ f5_pool_members }}"
+      delegate_to: localhost
+
+    - name: Create Virtual Server on F5 BIG-IP {{ f5_address }}
+      bigip_virtual_server:
+        state: present
+        provider: "{{ f5_provider }}"
+        name: "vs_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+        description: "Provisioned by Ansible"
+        destination: "{{ f5_virtual_ip }}"
+        port: "{{ f5_virtual_port }}"
+        snat: Automap
+        pool: "pool_{{ test_site.name }}"
+        profiles:
+          - "clientssl_{{ test_site.name }}"
+      delegate_to: localhost

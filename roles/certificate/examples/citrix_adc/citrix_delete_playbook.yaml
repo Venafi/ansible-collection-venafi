@@ -1,0 +1,128 @@
+- name: Remove Citrix ADC Application
+  hosts: localhost
+  connection: local
+  collections: citrix.adc
+
+  vars_files:
+    - variables.yaml
+
+  tasks:
+    - name: Remove ssl binding from Citrix ADC {{ adc_address }}
+      citrix_adc_nitro_resource:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        workflow:
+          lifecycle: binding
+          endpoint: sslvserver_sslcertkey_binding
+          bound_resource_missing_errorcode: 461
+          primary_id_attribute: vservername
+          delete_id_attributes:
+            - certkeyname
+            - crlcheck
+            - ocspcheck
+            - ca
+            - snicert
+        resource:
+          vservername: "vs-{{ test_site.name }}.{{ test_site.domain }}"
+          certkeyname: "{{ test_site.name }}.{{ test_site.domain }}_certkey"
+          snicert: true
+      delegate_to: localhost
+
+    - name: Remove lb vserver from Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        name: "vs-{{ test_site.name }}.{{ test_site.domain }}" 
+      delegate_to: localhost
+ 
+    - name: Remove service-http-1 from Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        name: service-http-1
+      delegate_to: localhost
+
+    - name: Remove service-http-2 from Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        name: service-http-2
+      delegate_to: localhost
+
+    - name: Remove service-http-3 from Citrix ADC {{ adc_address }}
+      citrix_adc_service:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        name: service-http-3
+      delegate_to: localhost
+
+    - name: Remove Certkey from Citrix ADC {{ adc_address }}
+      citrix_adc_ssl_certkey:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        certkey: "{{ test_site.name }}.{{ test_site.domain }}_certkey"
+      delegate_to: localhost
+
+    - name: Remove Private Key from Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        filelocation: "/nsconfig/ssl"
+        filename: "{{ key_name }}"
+      delegate_to: localhost
+
+    - name: Remove Certificate from Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        filelocation: "/nsconfig/ssl"
+        filename: "{{ cert_name }}"
+      delegate_to: localhost
+
+    - name: Remove CA Bundle from Citrix ADC {{ adc_address }}
+      citrix_adc_system_file:
+        nsip: "{{ adc_address }}"
+        nitro_user: "{{ adc_username }}"
+        nitro_pass: "{{ adc_password }}"
+        nitro_protocol: http
+        validate_certs: false
+        state: absent
+        filelocation: "/nsconfig/ssl"
+        filename: "{{ chain_name }}"
+
+    - name: Delete Local Crypto Assets
+      file:
+        state: absent
+        path: "./tmp/"

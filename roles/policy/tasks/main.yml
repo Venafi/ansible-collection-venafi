@@ -1,0 +1,23 @@
+---
+- name: "Include vars of {{ credentials_file }} into the venafi variable."
+  include_vars:
+    file: "{{ credentials_file }}"
+    name: venafi
+
+- name: "Create Policy on Venafi platform"
+  community.venafi.venafi_policy:
+    state: "{{ state | default(omit) }}"
+    force: "{{ force | default(omit) }}"
+    url: "{{ venafi.url | default(omit) }}"
+    token: "{{ venafi.token | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
+    zone: "{{ venafi.zone | default(omit) }}"
+    policy_spec_path: "{{ policy_spec_path | default(omit) }}"
+  register: policy_spec
+- name: "Dump newly created policy specification"
+  debug:
+    msg: "{{ policy_spec }}"

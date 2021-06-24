@@ -1,0 +1,22 @@
+---
+credentials_file: credentials.yml
+# Use Ansible host FQDN for certificate common name
+certificate_common_name: "{{ ansible_fqdn }}"
+
+# Directory where to place certificates
+certificate_cert_dir: "/etc/ssl/{{ certificate_common_name }}"
+# Paths for certificate and keys
+certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+certificate_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+certificate_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+certificate_csr_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"
+
+#  Where to execute venafi_certificate module. If set to false, certificate will be
+#  created on ansible master host and then copied to the remote server
+certificate_remote_execution: false
+#   remote location where to place the certificate_
+certificate_remote_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
+certificate_remote_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
+certificate_remote_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
+#  Set to false, if you don't want to copy private key to remote location
+certificate_copy_private_key_to_remote: true

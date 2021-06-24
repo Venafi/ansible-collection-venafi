@@ -1,0 +1,24 @@
+adc_address: "192.168.5.188"
+adc_username: "youruser"
+adc_password: "youtpassword"
+
+test_site:
+  name: "demo-citrix"
+  domain: "venafi.example"
+
+adc_virtual_ip: "192.168.3.167"
+adc_virtual_port: "443"
+
+http_service: 192.168.6.201
+port1: 8001
+port2: 8002
+port3: 8003
+    
+cert_name: "{{ test_site.name }}.crt"
+key_name: "{{ test_site.name }}.key"
+chain_name: "{{ test_site.name }}-ca-bundle.crt"
+
+adc_provider:
+  nsip: "{{ adc_address }}"
+  nitro_user: "{{ adc_username }}"
+  nitro_pass: "{{ adc_password }}"

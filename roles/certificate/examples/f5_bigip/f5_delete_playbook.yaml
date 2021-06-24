@@ -1,0 +1,60 @@
+- name: Remove F5 Application
+  hosts: localhost
+  connection: local
+
+  vars_files:
+    - variables.yaml
+
+  tasks:
+    - name: Remove Virtual Server from F5 BIG-IP {{ f5_address }}
+      bigip_virtual_server:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "vs_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Remove Pool from F5 BIG-IP {{ f5_address }}
+      bigip_pool:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "pool_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Remove Client SSL Profile from F5 BIG-IP {{ f5_address }}
+      bigip_profile_client_ssl:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "clientssl_{{ test_site.name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Remove Private Key from F5 BIG-IP {{ f5_address }}
+      bigip_ssl_key:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "{{ key_name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Remove Certificate from F5 BIG-IP {{ f5_address }}
+      bigip_ssl_certificate:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "{{ cert_name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Remove CA Bundle from F5 BIG-IP {{ f5_address }}
+      bigip_ssl_certificate:
+        state: absent
+        provider: "{{ f5_provider }}"
+        name: "{{ chain_name }}"
+        partition: "{{ f5_partition }}"
+      delegate_to: localhost
+
+    - name: Delete Local Crypto Assets
+      file:
+        state: absent
+        path: "./tmp/"

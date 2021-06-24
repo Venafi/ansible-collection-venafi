@@ -1,0 +1,15 @@
+---
+- name: "Include vars of {{ credentials_file }} into the venafi variable."
+  include_vars:
+    file: "{{ credentials_file }}"
+    name: venafi
+
+- name: "show execution mode"
+  debug:
+    msg: "certificate_remote_execution is {{ certificate_remote_execution }}"
+
+- import_tasks: local-certificate.yml
+  when: not certificate_remote_execution
+
+- import_tasks: remote-certificate.yml
+  when: certificate_remote_execution

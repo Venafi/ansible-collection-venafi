@@ -1,0 +1,123 @@
+# Clone https://github.com/chrismeyersfsu/provision_docker.git to /etc/ansible/roles before run
+---
+- name: "Bring up Docker containers for Docker connection inventory"
+  hosts: localhost
+  roles:
+    - role: provision_docker
+      provision_docker_privileged: true,
+      provision_docker_inventory_group: "{{ groups['robots'] }}"
+      provision_docker_use_docker_connection: true
+
+- hosts: robots
+  vars:
+    ca:
+      local_dir: /tmp/ansible-ca
+      remote_dir: /etc/ssl
+      cert_file: ca.pem
+      key_file: ca.key
+      csr_file: ca.csr
+      country_name: US
+      organization_name: Example
+      email_address: ca@example.com
+      common_name: ca
+    cert:
+      dir: /etc/ssl
+      cert_file: example.com.pem
+      key_file: example.com.key
+      csr_file: example.com.csr
+      country_name: US
+      organization_name: Example
+      email_address: ca@example.com
+      common_name: cert.example.com
+
+  tasks:
+    - name: "Say hello to my new containers"
+      ping:
+
+    - name: "Create directories for local CA files"
+      local_action:
+        module: file
+        path: "{{ ca.local_dir }}"
+        state: directory
+        mode: 0755
+
+    - name: "Generate an OpenSSL private key with the default values (4096 bits, RSA) for local CA"
+      local_action:
+        module: openssl_privatekey
+        path: "{{ ca.local_dir }}/{{ ca.key_file }}"
+
+    - name: "Generate an OpenSSL Certificate Signing Request with Subject information for local CA"
+      local_action:
+        module: openssl_csr
+        path: "{{ ca.local_dir }}/{{ ca.csr_file }}"
+        privatekey_path: "{{ ca.local_dir }}/{{ ca.key_file }}"
+        country_name: "{{ ca.country_name }}"
+        organization_name: "{{ ca.organization_name }}"
+        email_address: "{{ ca.email_address }}"
+        common_name: "{{ ca.common_name }}"
+        basic_constraints: "CA:true"
+
+    - name: "Generate a Self Signed local CA certificate"
+      local_action:
+        module: openssl_certificate
+        path: "{{ ca.local_dir }}/{{ ca.cert_file }}"
+        privatekey_path: "{{ ca.local_dir }}/{{ ca.key_file }}"
+        csr_path: "{{ ca.local_dir }}/{{ ca.csr_file }}"
+        provider: selfsigned
+
+    - name: "Copy CA file to remote location"
+      copy:
+        src: "{{ ca.local_dir }}/{{ item.file }}"
+        dest: "{{ cert.dir }}"
+      with_items:
+        - { file: "{{ ca.cert_file }}" }
+        - { file: "{{ ca.key_file }}" }
+
+    - name: "Install required pip packages"
+      pip:
+        name:
+          - pyOpenSSL
+
+    - name: "Create directories"
+      file:
+        path: "{{ cert.dir }}/{{ item.dir }}"
+        state: directory
+        mode: 0755
+      with_items:
+        - { dir: 'csr' }
+        - { dir: 'crt' }
+        - { dir: 'private' }
+
+
+    # Testing original crypto modules
+
+    - name: "Generate an OpenSSL private key with the default values (4096 bits, RSA)"
+      openssl_privatekey:
+        path: "{{ cert.dir }}/private/{{ cert.key_file }}"
+
+    - name: "Generate an OpenSSL Certificate Signing Request with Subject information"
+      openssl_csr:
+        path: "{{ cert.dir }}/csr/{{ cert.csr_file }}"
+        privatekey_path: "{{ cert.dir }}/private/{{ cert.key_file }}"
+        country_name: "{{ ca.country_name }}"
+        organization_name: "{{ ca.organization_name }}"
+        email_address: "{{ cert.email_address }}"
+        common_name: "{{ cert.common_name }}"
+
+    - name: "Sign certificate with local CA"
+      openssl_certificate:
+        path: "{{ cert.dir }}/crt/{{ cert.cert_file }}"
+        privatekey_path: "{{ cert.dir }}/private/{{ cert.key_file }}"
+        csr_path: "{{ cert.dir }}/csr/{{ cert.csr_file }}"
+        ownca_path: "{{ cert.dir }}/{{ ca.cert_file }}"
+        ownca_privatekey_path: "{{ cert.dir }}/{{ ca.key_file }}"
+        provider: ownca
+
+    - name: "Verify certificate"
+      openssl_certificate:
+        path: "{{ cert.dir }}/crt/{{ cert.cert_file }}"
+        privatekey_path: "{{ cert.dir }}/private/{{ cert.key_file }}"
+        issuer:
+          CN: ca
+        has_expired: false
+        provider: assertonly
