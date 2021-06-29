@@ -6,7 +6,7 @@
 namespace: venafi
 
 # The name of the collection. Has the same character restrictions as 'namespace'
-name: machine_identities
+name: machine_identity
 
 # The version of the collection. Must be compatible with semantic versioning
 version: 0.6.0
@@ -17,7 +17,7 @@ readme: README.md
 # A list of the collection's content authors. Can be just the name or in the format 'Full Name <email> (url)
 # @nicks:irc/im.site#channel'
 authors:
-  - Venafi Inc. <opensource@venafi.com> (https://github.com/Venafi/ansible-role-venafi)
+  - Venafi Inc. <opensource@venafi.com>
   - Alexander Rykalin (https://github.com/arykalin)
   - Russel Vela (https://github.com/rvelaVenafi)
 
@@ -70,3 +70,4 @@ build_ignore:
   - '*.tar.gz'
   - 'docs/*'
   - 'molecule/*'
+  - 'venv/*'

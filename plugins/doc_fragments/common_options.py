@@ -29,6 +29,6 @@ options:
     force:
         description:
             - Execute the task regardless of changes
-        default: false
+        default: no
         type: bool
 '''

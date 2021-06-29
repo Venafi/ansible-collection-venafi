@@ -34,7 +34,7 @@
     certificate_copy_private_key_to_remote: true
 
   roles:
-    - role: community.venafi.certificate
+    - role: venafi.machine_identity.certificate
 
   #  This tasks needed only for certificate verification
   tasks:
@@ -48,7 +48,7 @@
           - vcert==0.11.0
 
     - name: "Verify Venafi certificate on remote host"
-      community.venafi.venafi_certificate:
+      venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"
         zone: "{{ venafi.zone | default(omit) }}"
@@ -70,7 +70,7 @@
       when: cert_validation is changed
 
     - name: "Example verification which will always fail with debug message"
-      community.venafi.venafi_certificate:
+      venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"
         zone: "{{ venafi.zone | default(omit) }}"
@@ -97,7 +97,7 @@
       when: cert_validation_failed is not changed
 
     - name: "This one shouldn't enroll new Venafi certificate on remote host because it's valid"
-      community.venafi.venafi_certificate:
+      venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"
         zone: "{{ venafi.zone | default(omit) }}"

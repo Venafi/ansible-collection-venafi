@@ -22,7 +22,7 @@ options:
         description:
             - If C(true) a Fake connection will be created.
             - Use only for testing purposes.
-        default: false
+        default: no
         type: bool
 
     url:
@@ -30,8 +30,7 @@ options:
             - The url of the Venafi platform to connect to.
             - Required for Venafi TPP.
             - Optional for VaaS. Only set the url when trying to reach
-            a custom VaaS platform (like development)
-        default: ''
+              a custom VaaS platform (like development)
         type: str
 
     user:
@@ -39,7 +38,6 @@ options:
             - The username to authenticate at Venafi TPP.
             - This option is deprecated. Use I(access_token) instead.
             - Ignored for VaaS.
-        default: ''
         type: str
 
     password:
@@ -47,7 +45,6 @@ options:
             - The password to authenticate at Venafi TPP.
             - This option is deprecated. Use I(access_token) instead.
             - Ignored for VaaS.
-        default: ''
         type: str
 
     token:
@@ -55,7 +52,6 @@ options:
             - The api key to authenticate at VaaS platform
             - Required for VaaS
             - Ignored for Venafi TPP
-        default: ''
         type: str
 
     access_token:
@@ -63,7 +59,6 @@ options:
             - The oauth token to authenticate at Venafi TPP.
             - Use it instead of user/password combination.
             - Ignored for VaaS.
-        default: ''
         type: str
 
     trust_bundle:
@@ -71,6 +66,5 @@ options:
             - the path to a PEM file to be used as trust anchor when
             communicating with Venafi TPP.
             - Ignored for VaaS
-        default: ''
         type: str
 '''

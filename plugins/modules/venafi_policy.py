@@ -25,7 +25,7 @@ DOCUMENTATION = '''
 ---
 module: venafi_policy
 short_description: Creates or deletes policies on Venafi platforms
-version_added: '1.0.0'
+version_added: '4.1.0'
 description:
     - This is the Venafi policy management module for working with Venafi as a Service (VaaS)
       or Venafi Trusted Protection Platform (TPP).
@@ -47,8 +47,8 @@ options:
         type: path
 extends_documentation_fragment:
     - files
-    - community.venafi.venafi_connection_options
-    - community.venafi.common_options
+    - venafi.machine_identity.venafi_connection_options
+    - venafi.machine_identity.common_options
 author:
     - Russel Vela (@rvelaVenafi) on behalf of Venafi Inc.
 seealso:
@@ -80,9 +80,9 @@ import os
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
 try:
-    from ansible_collections.community.venafi.plugins.module_utils.common_utils \
+    from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
-    from ansible_collections.community.venafi.plugins.module_utils.policy_utils \
+    from ansible_collections.venafi.machine_identity.plugins.module_utils.policy_utils \
         import check_policy_specification
 except ImportError:
     from plugins.module_utils.common_utils \

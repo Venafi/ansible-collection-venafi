@@ -11,7 +11,7 @@
   delegate_to: localhost
 
 - name: "Enroll Venafi certificate on local host"
-  community.venafi.venafi_certificate:
+  venafi.machine_identity.venafi_certificate:
     url: "{{ venafi.url | default(omit) }}"
     token: "{{ venafi.token | default(omit) }}"
     zone: "{{ venafi.zone | default(omit) }}"
