@@ -164,7 +164,7 @@ class VPolicyManagement:
                     result[F_CHANGED] = True
                     result[F_POLICY_UPDATED] = self.zone
                     msgs.extend(new_msgs)
-                    msgs.append('Changes detected in local file %s. Updating policy %s on Venafi platform'
+                    msgs.append('Changes detected in local file %s against remote policy %s.'
                                 % (self.local_ps, self.zone))
                 else:
                     msgs.append('No changes detected in local file %s. No action required' % self.local_ps)

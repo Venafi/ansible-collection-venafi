@@ -148,23 +148,23 @@ def check_policy_specification(local_ps, remote_ps):
 
         # Validating Policy.SubjectAltNames
         empty_local_sans = _is_empty_object(local_p.subject_alt_names)
-        empty_remote_sans = _is_empty_object(remote_p.subject_alt_names)
-        if empty_local_sans and not empty_remote_sans:
-            is_changed = True
-            msgs.append(_get_empty_msg('Policy.SubjectAltNames', LOCAL))
-        elif not empty_local_sans and empty_remote_sans:
-            is_changed = True
-            msgs.append(_get_empty_msg('Policy.SubjectAltNames', REMOTE))
-        elif not empty_local_sans and not empty_remote_sans:
-            local_sans = local_p.subject_alt_names
-            remote_sans = remote_p.subject_alt_names
-            p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT_ALT_NAMES)
+        # Workaround issue, when local SANS is empty there is no point in checking remote SANS
+        # as remote policy will always have SANS, thus causing a false positive.
+        if not empty_local_sans:
+            empty_remote_sans = _is_empty_object(remote_p.subject_alt_names)
+            if not empty_local_sans and empty_remote_sans:
+                is_changed = True
+                msgs.append(_get_empty_msg('Policy.SubjectAltNames', REMOTE))
+            elif not empty_local_sans and not empty_remote_sans:
+                local_sans = local_p.subject_alt_names
+                remote_sans = remote_p.subject_alt_names
+                p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT_ALT_NAMES)
 
-            value_fields.append((p + FIELD_DNS_ALLOWED, local_sans.dns_allowed, remote_sans.dns_allowed))
-            value_fields.append((p + FIELD_EMAIL_ALLOWED, local_sans.email_allowed, remote_sans.email_allowed))
-            value_fields.append((p + FIELD_IP_ALLOWED, local_sans.ip_allowed, remote_sans.ip_allowed))
-            value_fields.append((p + FIELD_UPN_ALLOWED, local_sans.upn_allowed, remote_sans.upn_allowed))
-            value_fields.append((p + FIELD_URI_ALLOWED, local_sans.uri_allowed, remote_sans.uri_allowed))
+                value_fields.append((p + FIELD_DNS_ALLOWED, local_sans.dns_allowed, remote_sans.dns_allowed))
+                value_fields.append((p + FIELD_EMAIL_ALLOWED, local_sans.email_allowed, remote_sans.email_allowed))
+                value_fields.append((p + FIELD_IP_ALLOWED, local_sans.ip_allowed, remote_sans.ip_allowed))
+                value_fields.append((p + FIELD_UPN_ALLOWED, local_sans.upn_allowed, remote_sans.upn_allowed))
+                value_fields.append((p + FIELD_URI_ALLOWED, local_sans.uri_allowed, remote_sans.uri_allowed))
 
     # Validating Defaults
     empty_local_d = _is_empty_object(local_ps.defaults)
