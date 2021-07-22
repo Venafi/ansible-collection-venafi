@@ -62,17 +62,23 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-policy_created:
-    description: Name of the policy created at the Venafi platform.
+created:
+    description: Name of the policy created at the Venafi platform. May be empty
     returned: always
     type: str
     sample: My_App\\my_policy
 
-policy_deleted:
-    description: Name of the policy deleted at the Venafi platform.
+deleted:
+    description: Name of the policy deleted at the Venafi platform. May be empty
     returned: always
     type: str
     sample: My_App_to_delete\\my_policy_to_delete
+
+updated:
+    description: Name of the policy updated at the Venafi platform. May be empty
+    returned: always
+    type: str
+    sample: My_App_to_update\\my_policy_to_update
 '''
 
 import os
