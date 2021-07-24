@@ -1,4 +1,4 @@
-![Venafi](Venafi_logo.png)
+![Venafi](../../Venafi_logo.png)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
@@ -205,6 +205,6 @@ For more information about using roles go to https://docs.ansible.com/ansible/la
 
 Copyright &copy; Venafi, Inc. All rights reserved.
 
-This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE) for the full license text.
+This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
 
 Please direct questions/comments to opensource@venafi.com.
