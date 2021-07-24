@@ -39,7 +39,7 @@ options:
 
     chain_path:
         description:
-            - Remote absolute path where the generated certificate chain file should be created or is already located. 
+            - Remote absolute path where the generated certificate chain file should be created or is already located.
             - If set certificate and chain will be in separated files.
         default: null
         type: path
@@ -75,7 +75,7 @@ options:
 
     privatekey_path:
         description:
-            - Path to the private key to use when signing the certificate signing request. 
+            - Path to the private key to use when signing the certificate signing request.
             - If not set, the private key will be placed near certificate with key suffix.
         default: null
         type: path
@@ -256,7 +256,7 @@ try:
     from cryptography import x509
     from cryptography.hazmat.backends import default_backend
     from cryptography.x509.oid import NameOID, ExtensionOID
-    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives import serialization
 except ImportError:
     HAS_CRYPTOGRAPHY = False
 
