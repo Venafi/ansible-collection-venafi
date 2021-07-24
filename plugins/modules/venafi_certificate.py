@@ -16,113 +16,120 @@
 #
 from __future__ import absolute_import, print_function, unicode_literals
 
-
-ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
-
 DOCUMENTATION = '''
 ---
 module: venafi_certificate
-short_description: This is the Venafi certificate module for working with
-Venafi as a Service (VaaS) or Venafi Trusted Protection Platform (TPP)
-version_added: "2.7"
+short_description: This is the Venafi certificate module for working with Venafi as a Service (VaaS) or Venafi Trusted Protection Platform (TPP)
 description:
-    - This is Venafi certificate module for working with Venafi Cloud or
-     Venafi Trust Platform"
+    - This is Venafi certificate module for working with Venafi as a Service (VaaS) or Trust Protection Platform (TPP).
+version_added: "0.6.0"
+author: Alexander Rykalin (@arykalin)
 options:
     renew:
-        default: True
-        type: bool
         description:
             - Try to renew certificate if is existing but not valid.
+        default: true
+        type: bool
 
     cert_path:
-        required: true
         description:
-            - Remote absolute path where the generated certificate file should
-            be created or is already located.
+            - Remote absolute path where the generated certificate file should be created or is already located.
+        required: true
+        type: path
 
     chain_path:
-        required: false
         description:
-            - > Remote absolute path where the generated certificate chain file
-            should
-            be created or is already located. If set certificate and chain will
-            be in separated files.
+            - Remote absolute path where the generated certificate chain file should be created or is already located. 
+            - If set certificate and chain will be in separated files.
+        default: null
+        type: path
 
     chain_option:
-        required: false
-        default: "last"
         description:
-            - > Specify ordering certificates in chain. Root can be "first" or
-            "last"
+            - Specify ordering certificates in chain.
+        default: last
+        choices:
+            - first
+            - last
+        type: str
 
     common_name:
-        required: false
-        aliases: [ 'CN', 'commonName' ]
         description:
-            - commonName field of the certificate signing request subject
+            - CommonName field of the certificate signing request subject.
+        required: true
+        type: str
+        aliases:
+            - CN
+            - commonName
 
     alt_name:
-        required: false
-        aliases: [ 'alt_name' ]
         description:
             - SAN extension to attach to the certificate signing request
             - This can either be a 'comma separated string' or a YAML list.
-            - Values should be prefixed by their options. (IP:,email:,DNS:)
+            - Values should be prefixed by their options. (IP:,email:,DNS:).
+        default: null
+        type: list
+        elements: str
+        aliases:
+            - subjectAltName
 
     privatekey_path:
-        required: false
         description:
-            - > Path to the private key to use when signing the certificate
-            signing request. If not set will be placed
-            near certificate with key suffix.
+            - Path to the private key to use when signing the certificate signing request. 
+            - If not set, the private key will be placed near certificate with key suffix.
+        default: null
+        type: path
 
     privatekey_type:
-        default: "RSA"
-        required: false
         description:
-            - Type of private key. RSA or ECDSA
+            - Type of private key.
+        default: RSA
+        choices:
+            - RSA
+            - ECDSA
+        type: str
 
     privatekey_size:
-        required: false
-        default: 2048
         description:
             - Size (in bits) of the TLS/SSL key to generate. Used only for RSA.
+        default: 2048
+        choices:
+            - 2048
+            - 3072
+            - 4096
+            - 8192
+        type: int
 
     privatekey_curve:
-        required: false
-        default: "P521"
         description:
-            - | Curves name for ECDSA algorithm. Choices are "P224", "P256",
-            "P384", "P521".
+            - Curve name for ECDSA algorithm.
+        default: P521
+        choices:
+            - P256
+            - P384
+            - P521
+        type: str
 
     privatekey_passphrase:
-        required: false
         description:
             - The passphrase for the privatekey.
+        default: null
+        type: str
 
     privatekey_reuse:
-        required: false
-        type: bool
         description:
-            - If set to false new key won't be generated
+            - If set to false new key won't be generated.
+        default: true
+        type: bool
 
     before_expired_hours:
-        required: false
-        type: int
-        default: 72
         description:
-            - | If certificate will expire in less hours than this value
-            module will try to renew it.
+            - If certificate will expire in less hours than this value, module will try to renew it.
+        default: 72
+        type: int
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
-author:
-    - Alexander Rykalin (@arykalin) on behalf of Venafi Inc.
 '''
 
 EXAMPLES = '''
@@ -190,43 +197,37 @@ EXAMPLES = '''
 
 RETURN = '''
 privatekey_filename:
-    description: Path to the TLS/SSL private key the CSR was generated for
+    description: Path to the TLS/SSL private key the CSR was generated for.
     returned: changed or success
     type: string
     sample: /etc/ssl/private/venafi.example.pem
 
 privatekey_size:
-    description: Size (in bits) of the TLS/SSL private key
+    description: Size (in bits) of the TLS/SSL private key.
     returned: changed or success
     type: int
     sample: 4096
 
 privatekey_curve:
-    description: > ECDSA curve of generated private key. Variants are "P521",
-     "P384", "P256", "P224".
-
+    description: ECDSA curve of generated private key. Variants are "P521", "P384", "P256", "P224".
     returned: changed or success
     type: string
     sample: "P521"
 
 privatekey_type:
-    description: > Algorithm used to generate the TLS/SSL private key.
-    Variants are RSA or ECDSA
-
+    description: Algorithm used to generate the TLS/SSL private key. Variants are RSA or ECDSA.
     returned: changed or success
     type: string
     sample: RSA
 
 certificate_filename:
-    description: Path to the signed certificate
+    description: Path to the signed certificate.
     returned: changed or success
     type: string
     sample: /etc/ssl/www.venafi.example.pem
 
 chain_filename:
-    description: > Path to the chain of CA certificates that link
-    the certificate to a trust anchor
-
+    description: Path to the chain of CA certificates that link the certificate to a trust anchor.
     returned: changed or success
     type: string
     sample: /etc/ssl/www.venafi.example_chain.pem

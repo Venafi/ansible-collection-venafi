@@ -22,15 +22,15 @@ options:
         description:
             - If C(true) a Fake connection will be created.
             - Use only for testing purposes.
-        default: no
+        default: false
         type: bool
 
     url:
         description:
             - The url of the Venafi platform to connect to.
-            - Required for Venafi TPP.
-            - Optional for VaaS. Only set the url when trying to reach
-              a custom VaaS platform (like development)
+            - B(Required) for Venafi TPP.
+            - Optional for VaaS. Only set the url when trying to reach a custom VaaS platform (dev, QA, staging, etc.).
+        default: null
         type: str
 
     user:
@@ -38,6 +38,7 @@ options:
             - The username to authenticate at Venafi TPP.
             - This option is deprecated. Use I(access_token) instead.
             - Ignored for VaaS.
+        default: null
         type: str
 
     password:
@@ -45,13 +46,15 @@ options:
             - The password to authenticate at Venafi TPP.
             - This option is deprecated. Use I(access_token) instead.
             - Ignored for VaaS.
+        default: null
         type: str
 
     token:
         description:
-            - The api key to authenticate at VaaS platform
-            - Required for VaaS
-            - Ignored for Venafi TPP
+            - The api key to authenticate at VaaS platform.
+            - Required for VaaS.
+            - Ignored for Venafi TPP.
+        default: null
         type: str
 
     access_token:
@@ -59,12 +62,13 @@ options:
             - The oauth token to authenticate at Venafi TPP.
             - Use it instead of user/password combination.
             - Ignored for VaaS.
+        default: null
         type: str
 
     trust_bundle:
         description:
-            - the path to a PEM file to be used as trust anchor when
-            communicating with Venafi TPP.
-            - Ignored for VaaS
+            - the path to a PEM file to be used as trust anchor when communicating with Venafi TPP.
+            - Ignored for VaaS.
+        default: null
         type: str
 '''

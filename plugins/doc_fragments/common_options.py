@@ -20,15 +20,16 @@ class ModuleDocFragment(object):
 options:
     state:
         description:
-            - Whether the Policy should be created or deleted,
-            taking action if the state is different from what is stated.
-        choices: [present, absent]
+            - Whether the Policy should be created or deleted, taking action if the state is different from what is stated.
         default: present
+        choices:
+            - present
+            - absent
         type: str
 
     force:
         description:
-            - Execute the task regardless of changes
-        default: no
+            - Execute the task regardless of changes.
+        default: false
         type: bool
 '''

@@ -15,27 +15,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
-}
-
 DOCUMENTATION = '''
 ---
 module: venafi_policy
 short_description: Creates or deletes policies on Venafi platforms
-version_added: '4.1.0'
 description:
-    - This is the Venafi policy management module for working with Venafi as a Service (VaaS)
-      or Venafi Trusted Protection Platform (TPP).
-    - It allows to create a policy at I(zone) on the Venafi platform
-      from a file defined by I(policy_spec_path).
+    - This is the Venafi policy management module for working with Venafi as a Service and Venafi Trusted Protection Platform.
+    - It allows to create a policy at I(zone) on the Venafi platform from a file defined by I(policy_spec_path).
     - As of now, policy's delete operation is not supported.
+version_added: "0.6.0"
+author: Russel Vela (@rvelaVenafi)
 options:
     zone:
         description:
-            - The location where the Policy Specification will be created on the Venafi platform
+            - The location where the Policy Specification will be created on the Venafi platform.
         required: true
         type: str
 
@@ -44,15 +37,14 @@ options:
             - The path in the host of the Policy Specification file.
             - When defined it will be used to create a new Policy in the Venafi platform located at I(zone).
             - Ignored when I(state=absent).
+        default: null
         type: path
+seealso:
+    - module: venafi.machine_identity.venafi_certificate
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.venafi_connection_options
     - venafi.machine_identity.common_options
-author:
-    - Russel Vela (@rvelaVenafi) on behalf of Venafi Inc.
-seealso:
-    - module: venafi.machine_identity.venafi_certificate
 '''
 
 EXAMPLES = '''
@@ -63,19 +55,19 @@ EXAMPLES = '''
 
 RETURN = '''
 created:
-    description: Name of the policy created at the Venafi platform. May be empty
+    description: Name of the policy created at the Venafi platform. May be empty.
     returned: always
     type: str
     sample: My_App\\my_policy
 
 deleted:
-    description: Name of the policy deleted at the Venafi platform. May be empty
+    description: Name of the policy deleted at the Venafi platform. May be empty.
     returned: always
     type: str
     sample: My_App_to_delete\\my_policy_to_delete
 
 updated:
-    description: Name of the policy updated at the Venafi platform. May be empty
+    description: Name of the policy updated at the Venafi platform. May be empty.
     returned: always
     type: str
     sample: My_App_to_update\\my_policy_to_update
