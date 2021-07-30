@@ -10,12 +10,14 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 
 # Venafi VaaS and TPP Collection
 
-Documentation for the collection.
+This collection called `machine_identity` aims at providing all Ansible modules allowing to interact with Venafi Trust Protection Platform (TPP) or Venafi as a Service (VaaS).
+
+If you like this collection please give us a rating on [Ansible Galaxy](https://galaxy.ansible.com/venafi/machine_identity).
 
 ## Requirements
 
 Review the [Venafi](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
-prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.1 or higher) using `pip`:
+prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
 ```sh
 pip install ansible vcert --upgrade
 ```
@@ -24,8 +26,8 @@ pip install ansible vcert --upgrade
 
 ### Roles
 
-- `venafi.machine_identity.certificate`: Enrolls a certificate and move it to a remote location.
-- `venafi.machine_identity.policy`: Creates a new policy on VaaS or TPP, using a policy specification file.
+- [`venafi.machine_identity.certificate`](roles/certificate/README.md): Enrolls a certificate and move it to a remote location.
+- [`venafi.machine_identity.policy`](roles/policy/README.md): Creates a new policy on VaaS or TPP, using a policy specification file.
 
 ## License
 
