@@ -1,2 +1,3 @@
 ---
 credentials_file: credentials.yml
+set_policy_run_once: true

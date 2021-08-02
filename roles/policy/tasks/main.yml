@@ -17,6 +17,8 @@
     trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
     zone: "{{ venafi.zone | default(omit) }}"
     policy_spec_path: "{{ policy_spec_path | default(omit) }}"
+  delegate_to: localhost
+  run_once: "{{ set_policy_run_once }}"
   register: policy_spec
 - name: "Dump newly created policy specification"
   debug:

@@ -1,4 +1,4 @@
-![Venafi](Venafi_logo.png)
+![Venafi](../../Venafi_logo.png)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
@@ -8,9 +8,9 @@ In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
-# Venafi Role for Ansible
+# certificate role
 
-This solution adds certificate enrollment capabilities to [Red Hat Ansible](https://www.ansible.com/) by seamlessly
+This role adds certificate enrollment capabilities to [Red Hat Ansible](https://www.ansible.com/) by seamlessly
 integrating with the [Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform)
 or [Venafi as a Service](https://www.venafi.com/venaficloud) in a manner that ensures compliance with corporate
 security policy and provides visibility into certificate issuance enterprise wide.
@@ -29,7 +29,7 @@ security policy and provides visibility into certificate issuance enterprise wid
 ## Requirements
 
 Review the [Venafi](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
-prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.10.0 or higher) using `pip`:
+prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
 ```sh
 pip install ansible vcert --upgrade
 ```
@@ -38,10 +38,10 @@ pip install ansible vcert --upgrade
 
 For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs/using/installing.html    
 
-1. Install the [Venafi Role for Ansible](https://galaxy.ansible.com/venafi/ansible_role_venafi) from Ansible Galaxy:
+1. Install the [Machine Indentity Collection](https://galaxy.ansible.com/venafi/ansible_role_venafi) from Ansible Galaxy:
 
    ```sh
-   ansible-galaxy install venafi.ansible_role_venafi
+   ansible-galaxy collection install venafi.machine_identity
    ```
 
 1. Create the `credentials.yml` and populate it with connection parameters:
@@ -66,7 +66,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    EOF
    ```
    
-   The Venafi Role for Ansible supports the following connection and credential settings:
+   The certificate role supports the following connection and credential settings:
    
    | Variable Name  | Description                                                  |
    | -------------- | ------------------------------------------------------------ |
@@ -92,8 +92,9 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    ```yaml
    - hosts: localhost
      roles:
-       - role: venafi.ansible_role_venafi
-         certificate_cert_dir: "/tmp/etc/ssl/{{ certificate_common_name }}"
+       - role: venafi.machine_identity.certificate
+         certificate_common_name: "certificate.example.com" 
+         certificate_cert_dir: "/tmp/etc/ssl/"
    ```
 
 1. Run the playbook.
@@ -103,9 +104,15 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    ```
    
    Running the playbook will generate a certificate and place it into folder in /tmp/etc/ssl/ directory.
-   The `--ask-vault-pass` parameter is needed if you encrypted the `credentials.yml` file.  Additional
-   playbook variables can be added to specify properties of the certificate and key pair, file locations, 
-   and to override default behaviors. 
+   The `--ask-vault-pass` parameter is needed if you encrypted the `credentials.yml` file.
+   
+1. Additional playbook variables can be added to specify properties of the certificate and key pair, file locations, 
+   and to override default behaviors.
+   
+   ```sh
+   cat variables.yml
+   ```
+   The following is the list of variables accepted by the certificate role: 
 
    | Variable Name                            | Description                                                  |
    | ---------------------------------------- | ------------------------------------------------------------ |
@@ -135,19 +142,20 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
 
 ## Preparing a Docker demo environment for running Ansible 
 
-1. (Optional) Prepare the demo environment.  If you want to use your own inventory, update the tests/inventory file.  
+1. For this demo, move to the root folder of this collection.
+1. Prepare the demo environment.  If you want to use your own inventory, update the [tests/certificate/inventory](../../tests/certificate/inventory) file.  
 
     1. To run our test/demo playbook you'll need the Docker provisioning role.
-       Download it into the `tests/roles/provision_docker` directory: 
+       Download it into the `/tests/certificate/roles/provision_docker` directory: 
        
        ```sh
-       git clone https://github.com/chrismeyersfsu/provision_docker.git tests/roles/provision_docker
+       git clone https://github.com/chrismeyersfsu/provision_docker.git tests/certificate/roles/provision_docker
        ```
         
     1. Then build the Docker images needed for the demo playbook:
     
        ```sh
-       docker build ./tests --tag local-ansible-test
+       docker build ./tests/certificate --tag certificate-local-ansible-test
        ```
     
     Demo certificates will be placed in the `/tmp/ansible/etc/ssl` directory on the Ansible host.
@@ -161,8 +169,9 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    `password` parameters, the playbook assumes you are using Trust Protection Platform.
    
    ```sh
-   ansible-playbook -i tests/inventory \
-     tests/venafi-playbook-example.yml \
+   cd ./tests/certificate
+   ansible-playbook -i inventory \
+     venafi-playbook-example.yml \
      --extra-vars "credentials_file=credentials.yml docker_demo=true" \
      --ask-vault-pass
    ```
@@ -176,7 +185,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
 ```yaml
 - hosts: servers
   roles:
-    - role: "ansible-role-venafi"
+    - role: "venafi.machine_identity.certificate"
       certificate_common_name: "{{ ansible_fqdn }}.venafi.example.com"
       certificate_cert_dir: "/tmp/ansible/etc/ssl/{{ certificate_common_name }}"
       certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
@@ -205,6 +214,6 @@ For more information about using roles go to https://docs.ansible.com/ansible/la
 
 Copyright &copy; Venafi, Inc. All rights reserved.
 
-This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE) for the full license text.
+This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
 
 Please direct questions/comments to opensource@venafi.com.
