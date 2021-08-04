@@ -88,7 +88,9 @@ Start by creating a YAML file named `citrix_create_playbook.yaml`, inside, defin
 - name: Create Critx ADC Application
   hosts: localhost
   connection: local
-  collections: citrix.adc
+  collections: 
+    - citrix.adc
+    - venafi.machine_identity 
 
   vars_files:
     - variables.yaml
@@ -111,7 +113,7 @@ In the following block of instructions the Venafi Ansible Role is being specifie
 ---
 
   roles:
-    - role: venafi.ansible_role_venafi
+    - role: certificate
 
       certificate_common_name: "{{ test_site.name }}.{{ test_site.domain }}"
       certificate_alt_name: "DNS:{{ test_site.name }}.{{ test_site.domain }}"
