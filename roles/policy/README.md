@@ -8,9 +8,11 @@ In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
-# policy role
+# Venafi `policy` Role for Ansible
 
-This role...
+This role enables "Policy as Code" for [Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform)
+or [Venafi as a Service](https://vaas.venafi.com/) using [Red Hat Ansible](https://www.ansible.com/).  With it, certificate policy
+documented by specification files can by applied to Venafi to ensure compliance with enterprise standards.
 
 ## Requirements
 
