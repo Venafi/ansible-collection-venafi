@@ -8,11 +8,11 @@ In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
-# certificate role
+# Venafi `certificate` Role for Ansible
 
 This role adds certificate enrollment capabilities to [Red Hat Ansible](https://www.ansible.com/) by seamlessly
 integrating with the [Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform)
-or [Venafi as a Service](https://www.venafi.com/venaficloud) in a manner that ensures compliance with corporate
+or [Venafi as a Service](https://vaas.venafi.com/) in a manner that ensures compliance with corporate
 security policy and provides visibility into certificate issuance enterprise wide.
 
 >:red_car: **Test drive our integration examples today**
