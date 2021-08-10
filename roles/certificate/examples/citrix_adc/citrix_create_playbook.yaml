@@ -1,13 +1,15 @@
 - name: Create Critx ADC Application
   hosts: localhost
   connection: local
-  collections: citrix.adc
+  collections: 
+    - citrix.adc
+    - venafi.machine_identity 
 
   vars_files:
     - variables.yaml
 
   roles:
-    - role: venafi.ansible_role_venafi
+    - role: certificate
 
       certificate_common_name: "{{ test_site.name }}.{{ test_site.domain }}"
       certificate_alt_name: "DNS:{{ test_site.name }}.{{ test_site.domain }}"
