@@ -6,10 +6,10 @@
 
 - name: "show execution mode"
   debug:
-    msg: "ssh_certificate_remote_execution is {{ certificate_remote_execution }}"
+    msg: "ssh_remote_execution is {{ ssh_remote_execution }}"
 
 - import_tasks: local-certificate.yml
-  when: not certificate_remote_execution
+  when: not ssh_remote_execution
 
 - import_tasks: remote-certificate.yml
-  when: certificate_remote_execution
+  when: ssh_remote_execution

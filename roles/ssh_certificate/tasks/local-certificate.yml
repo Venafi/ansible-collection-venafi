@@ -1,0 +1,62 @@
+# Locally generate certificate
+# Copy files to remote host from inventory
+# Generates certificates on remote host
+---
+- name: "Create directory {{ ssh_cert_dir }}"
+  file:
+    path: "{{ ssh_cert_dir }}"
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+
+- name: "Enroll Venafi SSH certificate on local host"
+  venafi.machine_identity.venafi_ssh_certificate:
+    url: "{{ venafi.url | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    cert_path: "{{ ssh_cert_path }}"
+    public_key_path: "{{ ssh_public_key_path }}"
+    private_key_path: "{{ ssh_private_key_path }}"
+    cadn: "{{ ssh_cadn }}"
+    key_id: "{{ ssh_key_id }}"
+    ssh_key_generation_type: "{{ ssh_key_generation_type | default(omit) }}"
+    private_key_passphrase: "{{ ssh_private_key_passphrase | default(omit) }}"
+    ssh_key_size: "{{ ssh_key_size | default(omit) }}"
+    validity_period: "{{ ssh_validity_period | default(omit) }}"
+    policy_dn: "{{ ssh_policy_dn | default(omit) }}"
+    object_name: "{{ ssh_object_name | default(omit) }}"
+    destination_addresses: "{{ ssh_destination_addresses | default(omit) }}"
+    principals: "{{ ssh_principals | default(omit) }}"
+    extensions: "{{ ssh_extensions | default(omit) }}"
+    force_command: "{{ ssh_force_command | default(omit) }}"
+    source_addresses: "{{ ssh_source_addresses | default(omit) }}"
+    windows_cert: "{{ ssh_windows_cert | default(omit) }}"
+    force: "{{ ssh_force if ssh_force is defined else false }}"
+  delegate_to: localhost
+  register: certout
+- name: "dump test output"
+  debug:
+    msg: "{{ certout }}"
+
+- name: "Copy Venafi SSH certificate file to remote location {{ ssh_remote_cert_path if ssh_remote_cert_path is defined else ssh_cert_path }}"
+  copy:
+    src: "{{ ssh_cert_path }}"
+    dest: "{{ ssh_remote_cert_path if ssh_remote_cert_path else ssh_cert_path }}"
+    mode: 0644
+
+- name: "Copy Venafi private key file to remote location {{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
+  copy:
+    src: "{{ ssh_private_key_path }}"
+    dest: "{{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
+    mode: 0600
+  when: certificate_copy_private_key_to_remote
+
+- name: "Copy Venafi public key file to remote location {{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
+  copy:
+    src: "{{ ssh_public_key_path }}"
+    dest: "{{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
+    mode: 0644
+  when: certificate_copy_public_key_to_remote

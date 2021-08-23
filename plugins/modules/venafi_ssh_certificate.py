@@ -122,29 +122,11 @@ class VSSHCertificate:
                     self.module.fail_json(msg="File not found. "
                                               "[%s] field is required when SSH key generation type is [%s]."
                                               % (F_PUBLIC_KEY_PATH, SSH_GEN_TYPE_PROVIDED))
-            # TODO: For now we are not validating the scenario when files are already present.
-            # else:
-            #     # Regardless of generation type being local or service,
-            #     # it should fail if the public/private key files already exist
-            #     fail = False
-            #     fail_msg = "SSH %s key file already exists at [%s]. [%s] field is used to save the generated key when" \
-            #                " SSH key generation type is set to '%s'."
-            #     if os.path.exists(self.public_key_filename):
-            #         fail = True
-            #         fail_msg = fail_msg % ("public", self.public_key_filename, F_PUBLIC_KEY_PATH,
-            #                                self.ssh_key_generation_type)
-            #     elif os.path.exists(self.private_key_filename):
-            #         fail = True
-            #         fail_msg = fail_msg % ("private", self.private_key_filename, F_PRIVATE_KEY_PATH,
-            #                                self.ssh_key_generation_type)
-            #     if fail:
-            #         self.module.fail_json(msg=fail_msg)
             if cert_file_exists:
-                # TODO: what should we check here? How to read the SSH cert to extract info?
                 result = {
                     F_CERT_FILE_EXISTS: True,
                     F_CHANGED: True,
-                    F_CHANGED_MSG: "Mockup message when the certificate is different from what already exists.",
+                    F_CHANGED_MSG: "SSH Certificate found. Requesting a new one with key id %s" % self.key_id,
                 }
             else:
                 result = {
@@ -155,7 +137,6 @@ class VSSHCertificate:
         elif self.state == 'absent':
             if cert_file_exists:
                 # If cert exists, it must be revoked/deleted from host
-                # TODO: vcert-python does not support revoking an SSH certificate as of now
                 result = {
                     F_CERT_FILE_EXISTS: True,
                     F_CHANGED: True,
@@ -178,10 +159,12 @@ class VSSHCertificate:
         :return: None
         """
         result = self.check()
-        if result[F_CHANGED]:
+        if self.state is 'absent' and result[F_CHANGED]:
             self.module.fail_json(
                 msg="Operation validation failed. No changes should be found after execution. Found: %s"
                     % result[F_CHANGED_MSG])
+
+        return result
 
     def enroll(self):
         ssh_request = SSHCertRequest(
