@@ -41,22 +41,27 @@
   debug:
     msg: "{{ certout }}"
 
+- name: "Check private key file exists"
+  stat:
+    path:  "{{ ssh_private_key_path }}"
+  register: private_key_stat
+
 - name: "Copy Venafi SSH certificate file to remote location {{ ssh_remote_cert_path if ssh_remote_cert_path is defined else ssh_cert_path }}"
   copy:
     src: "{{ ssh_cert_path }}"
     dest: "{{ ssh_remote_cert_path if ssh_remote_cert_path else ssh_cert_path }}"
     mode: 0644
 
-- name: "Copy Venafi private key file to remote location {{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
-  copy:
-    src: "{{ ssh_private_key_path }}"
-    dest: "{{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
-    mode: 0600
-  when: certificate_copy_private_key_to_remote
-
 - name: "Copy Venafi public key file to remote location {{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
   copy:
     src: "{{ ssh_public_key_path }}"
     dest: "{{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
     mode: 0644
-  when: certificate_copy_public_key_to_remote
+  when: ssh_copy_public_key_to_remote
+
+- name: "Copy Venafi private key file to remote location {{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
+  copy:
+    src: "{{ ssh_private_key_path }}"
+    dest: "{{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
+    mode: 0600
+  when: ssh_copy_private_key_to_remote and private_key_stat.stat.exists

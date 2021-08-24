@@ -159,7 +159,7 @@ class VSSHCertificate:
         :return: None
         """
         result = self.check()
-        if self.state is 'absent' and result[F_CHANGED]:
+        if self.state == 'absent' and result[F_CHANGED]:
             self.module.fail_json(
                 msg="Operation validation failed. No changes should be found after execution. Found: %s"
                     % result[F_CHANGED_MSG])
@@ -194,6 +194,10 @@ class VSSHCertificate:
             self.module.fail_json(msg="Failed to request certificate with key id %s" % ssh_request.key_id)
 
         response = self.connection.retrieve_ssh_cert(ssh_request)
+
+        if self.ssh_key_generation_type == SSH_GEN_TYPE_LOCAL:
+            response.private_key_data = ssh_kp.private_key()
+
         if response:
             self._write_response(response)
 
