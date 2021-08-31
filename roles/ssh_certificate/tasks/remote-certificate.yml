@@ -1,0 +1,33 @@
+# Generates certificate on remote host
+---
+- name: "Enroll Venafi SSH certificate on remote host"
+  venafi.machine_identity.venafi_ssh_certificate:
+    url: "{{ venafi.url | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    cert_path: "{{ ssh_cert_path }}"
+    public_key_path: "{{ ssh_public_key_path }}"
+    private_key_path: "{{ ssh_private_key_path }}"
+    cadn: "{{ ssh_cadn }}"
+    key_id: "{{ ssh_key_id }}"
+    ssh_key_generation_type: "{{ ssh_key_generation_type | default(omit) }}"
+    private_key_passphrase: "{{ ssh_private_key_passphrase | default(omit) }}"
+    ssh_key_size: "{{ ssh_key_size | default(omit) }}"
+    validity_period: "{{ ssh_validity_period | default(omit) }}"
+    policy_dn: "{{ ssh_policy_dn | default(omit) }}"
+    object_name: "{{ ssh_object_name | default(omit) }}"
+    destination_addresses: "{{ ssh_destination_addresses | default(omit) }}"
+    principals: "{{ ssh_principals | default(omit) }}"
+    extensions: "{{ ssh_extensions | default(omit) }}"
+    force_command: "{{ ssh_force_command | default(omit) }}"
+    source_addresses: "{{ ssh_source_addresses | default(omit) }}"
+    windows_cert: "{{ ssh_windows_cert | default(omit) }}"
+    force: "{{ ssh_force if ssh_force is defined else false }}"
+  delegate_to: localhost
+  register: certout
+- name: "dump test output"
+  debug:
+    msg: "{{ certout }}"
