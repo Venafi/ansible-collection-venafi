@@ -26,7 +26,7 @@
     private_key_passphrase: "{{ ssh_private_key_passphrase | default(omit) }}"
     ssh_key_size: "{{ ssh_key_size | default(omit) }}"
     validity_period: "{{ ssh_validity_period | default(omit) }}"
-    policy_dn: "{{ ssh_policy_dn | default(omit) }}"
+    folder: "{{ ssh_policy_dn | default(omit) }}"
     object_name: "{{ ssh_object_name | default(omit) }}"
     destination_addresses: "{{ ssh_destination_addresses | default(omit) }}"
     principals: "{{ ssh_principals | default(omit) }}"

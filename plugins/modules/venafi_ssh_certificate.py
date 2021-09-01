@@ -90,7 +90,7 @@ options:
                     b(Relative time) b(s), b(m), b(h), b(d), and b(w). Example: b(1w 2d 3h 4m 50s).
                     b(Static end day) in format of b(yyyyMMdd) or b(yyyyMMddHHmmss). Example: b(20241230).
         type: str
-    policy_dn:
+    folder:
         description:
             - The Domain Name of the policy folder where the certificate object will be created.
             - If this is not specified, then the policy folder specified on the certificate template will be used.
@@ -264,7 +264,7 @@ F_SSH_KEY_SIZE = 'ssh_key_size'
 F_CADN = 'template'
 F_KEY_ID = 'key_id'
 F_VALIDITY_PERIOD = 'validity_period'
-F_POLICY_DN = 'policy_dn'
+F_POLICY_DN = 'folder'
 F_OBJECT_NAME = 'object_name'
 F_DEST_ADDRESSES = 'destination_addresses'
 F_PRINCIPALS = 'principals'
@@ -492,7 +492,7 @@ def main():
         template=dict(type='str', required=True),
         key_id=dict(type='str', required=True),
         validity_period=dict(type='str', required=False),
-        policy_dn=dict(type='str', required=False),
+        folder=dict(type='str', required=False),
         object_name=dict(type='str', required=False),
         destination_addresses=dict(type='list', elements='str', required=False),
         principals=dict(type='list', elements='str', required=False),
