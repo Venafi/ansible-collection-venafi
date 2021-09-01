@@ -69,9 +69,9 @@ options:
             - 3072
             - 4096
         type: int
-    cadn:
+    template:
         description:
-            - The DN of the issuing certificate template which will be used for signing.
+            - The Domain Name of the issuing certificate template which will be used for signing.
         required: true
         type: str
     key_id:
@@ -92,7 +92,7 @@ options:
         type: str
     policy_dn:
         description:
-            - The DN of the policy folder where the certificate object will be created.
+            - The Domain Name of the policy folder where the certificate object will be created.
             - If this is not specified, then the policy folder specified on the certificate template will be used.
         type: str
     object_name:
@@ -151,7 +151,7 @@ EXAMPLES = """
     url: "https://venafi.example.com"
     access_token: "AnkEFGHY+IpaTPyiM3DHsMR=="
     cert_path: "/path/to/ssh/certificate"
-    cadn: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
+    template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
     key_id: "ssh-cert-id"
   register: certout
 - name: "dump test output"
@@ -165,7 +165,7 @@ EXAMPLES = """
     url: "https://venafi.example.com"
     access_token: "AnkEFGHY+IpaTPyiM3DHsMR=="
     cert_path: "/path/to/ssh/certificate"
-    cadn: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
+    template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
     key_id: "ssh-cert-id"
     ssh_key_generation_type: "provided"
     public_key_path: "/path/to/my/public_key.pub"
@@ -181,7 +181,7 @@ EXAMPLES = """
     url: "https://venafi.example.com"
     access_token: "AnkEFGHY+IpaTPyiM3DHsMR=="
     cert_path: "/path/to/ssh/certificate"
-    cadn: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
+    template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
     key_id: "ssh-cert-id"
     ssh_key_generation_type: "local"
     private_key_passphrase: "MyPassphrase"
@@ -196,32 +196,32 @@ RETURN = """
 ssh_keypair_generation:
     description: The mode used to generate the public and private keys.
     returned: always
-    type: bool
-    sample: True
+    type: str
+    sample: "local"
 
 ssh_certificate_filename:
     description: Path to the signed certificate.
     returned: always
-    type: path
-    sample: /etc/ssh/venafi.example-cert.pub
+    type: str
+    sample: "/etc/ssh/venafi.example-cert.pub"
 
 ssh_public_key_filename:
     description: Path to the generated or provided public key.
     returned: always
-    type: path
-    sample: /etc/ssh/venafi.example.pub
+    type: str
+    sample: "/etc/ssh/venafi.example.pub"
 
 ssh_private_key_filename:
     description: Path to the generated private key.
     returned: when I(ssh_key_generation_type) is not C(provided)
-    type: path
-    sample: /etc/ssh/venafi.example
+    type: str
+    sample: "/etc/ssh/venafi.example"
 
 ssh_certificate_removed:
     description: Path of the removed certificate
     returned: when I(state) is C(absent)
-    type: path
-    sample: /etc/ssh/venafi.example
+    type: str
+    sample: "/etc/ssh/venafi.example"
 """
 
 import os
@@ -261,7 +261,7 @@ F_WINDOWS_CERT = 'windows_cert'
 F_SSH_KEY_GEN_TYPE = 'ssh_key_generation_type'
 F_PRIVATE_KEY_PASS = 'private_key_passphrase'
 F_SSH_KEY_SIZE = 'ssh_key_size'
-F_CADN = 'cadn'
+F_CADN = 'template'
 F_KEY_ID = 'key_id'
 F_VALIDITY_PERIOD = 'validity_period'
 F_POLICY_DN = 'policy_dn'
@@ -459,9 +459,9 @@ class VSSHCertificate:
             'changed': self.changed,
         }
         if self.state == "present":
-            result['ssh_keypair_generation'] = self.ssh_key_generation_type,
-            result['ssh_certificate_filename'] = self.certificate_filename,
-            result['ssh_public_key_filename'] = self.public_key_filename,
+            result['ssh_keypair_generation'] = self.ssh_key_generation_type
+            result['ssh_certificate_filename'] = self.certificate_filename
+            result['ssh_public_key_filename'] = self.public_key_filename
             if self.private_key_changed:
                 result['ssh_private_key_filename'] = self.private_key_filename
         else:
@@ -489,7 +489,7 @@ def main():
         private_key_passphrase=dict(type='str', no_log=True),
         ssh_key_size=dict(type='int', choices=[2048, 3072, 4096], default=3072, required=False),
         # SSH Certificate attributes
-        cadn=dict(type='str', required=True),
+        template=dict(type='str', required=True),
         key_id=dict(type='str', required=True),
         validity_period=dict(type='str', required=False),
         policy_dn=dict(type='str', required=False),
