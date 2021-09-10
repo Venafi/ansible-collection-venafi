@@ -127,6 +127,11 @@ options:
             - If certificate will expire in less hours than this value, module will try to renew it.
         default: 72
         type: int
+    custom_fields:
+        description:
+            - A key/value map of customer-defined attributes for the certificate.
+        default: null
+        type:dict
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
@@ -249,7 +254,7 @@ except ImportError:
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType
+    from vcert import CertificateRequest, KeyType, CustomField
 except ImportError:
     HAS_VCERT = False
 try:
@@ -322,6 +327,7 @@ class VCertificate:
                         msg="Failed to determine extension type: %s" % n)
 
         self.before_expired_hours = module.params['before_expired_hours']
+        self.custom_fields = module.params['custom_fields']  # type: dict
 
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
@@ -403,6 +409,17 @@ class VCertificate:
         except Exception as e:
             self.module.log(msg=str(e))
             pass
+
+        if self.custom_fields:
+            cf_list = []
+            for key, value in self.custom_fields.items():
+                if isinstance(value, list):
+                    # Multiple values for same entry
+                    for item in value:
+                        cf_list.append(CustomField(name=key, value=item))
+                else:
+                    cf_list.append(CustomField(name=key, value=value))
+            request.custom_fields = cf_list
 
         self.connection.request_cert(request, self.zone)
         print(request.csr)
@@ -657,7 +674,8 @@ def main():
         csr_path=dict(type='path', require=False),
         # Role config
         before_expired_hours=dict(type='int', required=False, default=72),
-        renew=dict(type='bool', required=False, default=True)
+        renew=dict(type='bool', required=False, default=True),
+        custom_fields=dict(type='dict', required=False)
     )
     module = AnsibleModule(
         # define the available arguments/parameters that a user can pass to the module
