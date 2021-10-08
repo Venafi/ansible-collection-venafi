@@ -299,6 +299,7 @@ class VCertificate:
         self.privatekey_reuse = module.params['privatekey_reuse']
         self.chain_filename = module.params['chain_path']
         self.csr_path = module.params['csr_path']
+        self.csr_origin = module.params['csr_origin']
         self.args = ""
         self.changed = False
         self.module = module
@@ -397,6 +398,13 @@ class VCertificate:
         request.email_addresses = self.email_addresses
 
         request.chain_option = self.module.params['chain_option']
+        if self.module.params['csr_origin']:
+            csr_origin = self.module.params['csr_origin']
+            request.csr_origin = csr_origin
+            self.module.log(msg="csr_origin is: %s" % csr_origin)
+            if csr_origin.lower() == "service":
+                request.include_private_key = True
+
         try:
             csr = open(self.csr_path, "rb").read()
             request.csr = csr
@@ -417,9 +425,10 @@ class VCertificate:
             self._atomic_write(self.certificate_filename, cert.cert)
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
-        if not use_existed_key:
-            self._atomic_write(self.privatekey_filename,
-                               request.private_key_pem)
+        if not use_existed_key and self.module.params['csr_origin'].lower() != "service":
+            self._atomic_write(self.privatekey_filename, request.private_key_pem)
+        if self.module.params['csr_origin'].lower() == "service":
+            self._atomic_write(self.privatekey_filename, cert.key)
         # todo: server generated private key
 
     def _atomic_write(self, path, content):
@@ -655,6 +664,7 @@ def main():
         common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
         chain_option=dict(type='str', required=False, default='last'),
         csr_path=dict(type='path', require=False),
+        csr_origin=dict(type='str', require=False),
         # Role config
         before_expired_hours=dict(type='int', required=False, default=72),
         renew=dict(type='bool', required=False, default=True)
