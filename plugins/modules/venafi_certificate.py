@@ -401,7 +401,6 @@ class VCertificate:
         if self.module.params['csr_origin']:
             csr_origin = self.module.params['csr_origin']
             request.csr_origin = csr_origin
-            self.module.log(msg="csr_origin is: %s" % csr_origin)
             if csr_origin.lower() == "service":
                 request.include_private_key = True
 
