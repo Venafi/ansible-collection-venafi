@@ -402,6 +402,9 @@ class VCertificate:
             csr_origin = self.module.params['csr_origin']
             request.csr_origin = csr_origin
             if csr_origin.lower() == "service":
+                if not self.module.params['privatekey_passphrase']:
+                    self.module.fail_json(msg=("Missing parameter for Service Generated CSR: " 
+                       "privatekey_passphrase"))
                 request.include_private_key = True
 
         try:
