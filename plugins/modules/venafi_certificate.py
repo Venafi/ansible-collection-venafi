@@ -425,11 +425,8 @@ class VCertificate:
             self._atomic_write(self.certificate_filename, cert.cert)
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
-        if not use_existed_key and self.module.params['csr_origin'].lower() != "service":
-            self._atomic_write(self.privatekey_filename, request.private_key_pem)
-        if self.csr_origin.lower() == "service":
+        if not use_existed_key:
             self._atomic_write(self.privatekey_filename, cert.key)
-        # todo: server generated private key
 
     def _atomic_write(self, path, content):
         suffix = ".atomic_%s" % random.randint(100, 100000)
