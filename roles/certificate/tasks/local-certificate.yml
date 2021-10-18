@@ -30,6 +30,7 @@
     alt_name: "{{ certificate_alt_name | default([]) }}"
     before_expired_hours: "{{ certificate_before_expired_hours if certificate_before_expired_hours is defined else 72 }}"
     force: "{{ certificate_force if certificate_force is defined else false }}"
+    pkcs12_format: "{{ certificate_pkcs12_format | default(omit) }}"
   delegate_to: localhost
   register: certout
 - name: "dump test output"

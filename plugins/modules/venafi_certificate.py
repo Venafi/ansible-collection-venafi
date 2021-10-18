@@ -322,6 +322,7 @@ class VCertificate:
                         msg="Failed to determine extension type: %s" % n)
 
         self.before_expired_hours = module.params['before_expired_hours']
+        self.use_pkcs12 = self.module.params['pkcs12_format']
 
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
@@ -412,7 +413,9 @@ class VCertificate:
                 break
             else:
                 time.sleep(5)
-        if self.chain_filename:
+        if self.use_pkcs12:
+            self._atomic_write(self._get_pkcs12_cert_path(), cert.as_pkcs12(passphrase=self.privatekey_passphrase))
+        elif self.chain_filename:
             self._atomic_write(self.chain_filename, "\n".join(cert.chain))
             self._atomic_write(self.certificate_filename, cert.cert)
         else:
@@ -421,6 +424,19 @@ class VCertificate:
             self._atomic_write(self.privatekey_filename,
                                request.private_key_pem)
         # todo: server generated private key
+
+    def _get_pkcs12_cert_path(self):
+        """
+
+        :rtype: str
+        """
+        if self.certificate_filename.endswith(".pfx") or self.certificate_filename.endswith(".p12"):
+            return self.certificate_filename
+        else:
+            index = len(self.certificate_filename)
+            index -= 4
+            pkcs12_name = self.certificate_filename[0:index]
+            return "%s.p12" % pkcs12_name
 
     def _atomic_write(self, path, content):
         suffix = ".atomic_%s" % random.randint(100, 100000)
@@ -657,7 +673,9 @@ def main():
         csr_path=dict(type='path', require=False),
         # Role config
         before_expired_hours=dict(type='int', required=False, default=72),
-        renew=dict(type='bool', required=False, default=True)
+        renew=dict(type='bool', required=False, default=True),
+        pkcs12_format=dict(type='bool', default=False, required=False)
+
     )
     module = AnsibleModule(
         # define the available arguments/parameters that a user can pass to the module
