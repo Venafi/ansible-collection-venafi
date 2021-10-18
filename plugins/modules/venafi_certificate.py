@@ -25,43 +25,6 @@ description:
 version_added: "0.6.0"
 author: Alexander Rykalin (@arykalin)
 options:
-    renew:
-        description:
-            - Try to renew certificate if is existing but not valid.
-        default: true
-        type: bool
-
-    cert_path:
-        description:
-            - Remote absolute path where the generated certificate file should be created or is already located.
-        required: true
-        type: path
-
-    chain_path:
-        description:
-            - Remote absolute path where the generated certificate chain file should be created or is already located.
-            - If set certificate and chain will be in separated files.
-        default: null
-        type: path
-
-    chain_option:
-        description:
-            - Specify ordering certificates in chain.
-        default: last
-        choices:
-            - first
-            - last
-        type: str
-
-    common_name:
-        description:
-            - CommonName field of the certificate signing request subject.
-        required: true
-        type: str
-        aliases:
-            - CN
-            - commonName
-
     alt_name:
         description:
             - SAN extension to attach to the certificate signing request
@@ -72,23 +35,74 @@ options:
         elements: str
         aliases:
             - subjectAltName
-
+    before_expired_hours:
+        description:
+            - If certificate will expire in less hours than this value, module will try to renew it.
+        default: 72
+        type: int
+    cert_path:
+        description:
+            - Remote absolute path where the generated certificate file should be created or is already located.
+        required: true
+        type: path
+    chain_option:
+        description:
+            - Specify ordering certificates in chain.
+        default: last
+        choices:
+            - first
+            - last
+        type: str
+    chain_path:
+        description:
+            - Remote absolute path where the generated certificate chain file should be created or is already located.
+            - If set certificate and chain will be in separated files.
+        default: null
+        type: path
+    common_name:
+        description:
+            - CommonName field of the certificate signing request subject.
+        required: true
+        type: str
+        aliases:
+            - CN
+            - commonName
+    issuer_hint:
+        description:
+            - Issuer of the certificate. Ignored when platform is not TPP.
+            - Use in combination with I(validity_hours) to specify the validity period of a certificate on TPP.
+        default: DEFAULT
+        choices:
+            - DEFAULT
+            - DIGICERT
+            - ENTRUST
+            - MICROSOFT
+        type: str
+    privatekey_curve:
+        description:
+            - Curve name for ECDSA algorithm.
+        default: P521
+        choices:
+            - P256
+            - P384
+            - P521
+        type: str
+    privatekey_passphrase:
+        description:
+            - The passphrase for the privatekey.
+        default: null
+        type: str
     privatekey_path:
         description:
             - Path to the private key to use when signing the certificate signing request.
             - If not set, the private key will be placed near certificate with key suffix.
         default: null
         type: path
-
-    privatekey_type:
+    privatekey_reuse:
         description:
-            - Type of private key.
-        default: RSA
-        choices:
-            - RSA
-            - ECDSA
-        type: str
-
+            - If set to false new key won't be generated.
+        default: true
+        type: bool
     privatekey_size:
         description:
             - Size (in bits) of the TLS/SSL key to generate. Used only for RSA.
@@ -99,33 +113,30 @@ options:
             - 4096
             - 8192
         type: int
-
-    privatekey_curve:
+    privatekey_type:
         description:
-            - Curve name for ECDSA algorithm.
-        default: P521
+            - Type of private key.
+        default: RSA
         choices:
-            - P256
-            - P384
-            - P521
+            - RSA
+            - ECDSA
         type: str
-
-    privatekey_passphrase:
+    renew:
         description:
-            - The passphrase for the privatekey.
-        default: null
-        type: str
-
-    privatekey_reuse:
-        description:
-            - If set to false new key won't be generated.
+            - Try to renew certificate if is existing but not valid.
         default: true
         type: bool
-
-    before_expired_hours:
+    use_pkcs12:
         description:
-            - If certificate will expire in less hours than this value, module will try to renew it.
-        default: 72
+            - Use PKCS12 format to serialize the certificate.
+        default: false
+        type: bool
+    validity_hours:
+        description:
+            - Indicates the validity period of the certificate before it expires.
+            - When the platform is TPP, an issuer can be defined as well. See I(issuer_hint).
+        required: false
+        default: null
         type: int
 extends_documentation_fragment:
     - files
@@ -242,14 +253,16 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_bytes, to_text
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, get_issuer_hint, \
+        DEFAULT, DIGICERT, ENTRUST, MICROSOFT
 except ImportError:
     from plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, get_issuer_hint, \
+        DEFAULT, DIGICERT, ENTRUST, MICROSOFT
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType
+    from vcert import CertificateRequest, KeyType, IssuerHint
 except ImportError:
     HAS_VCERT = False
 try:
@@ -322,7 +335,10 @@ class VCertificate:
                         msg="Failed to determine extension type: %s" % n)
 
         self.before_expired_hours = module.params['before_expired_hours']
-        self.use_pkcs12 = self.module.params['pkcs12_format']
+        self.use_pkcs12 = module.params['pkcs12_format']
+        self.validity_hours = module.params['validity_hours']
+        hint = module.params['issuer_hint']
+        self.issuer_hint = get_issuer_hint(hint)
 
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
@@ -365,7 +381,9 @@ class VCertificate:
         request = CertificateRequest(
             common_name=self.common_name,
             key_password=self.privatekey_passphrase,
-            origin="Red Hat Ansible"
+            origin="Red Hat Ansible",
+            validity_hours=self.validity_hours,
+            issuer_hint=self.issuer_hint
         )
         zone_config = self.connection.read_zone_conf(self.zone)
         request.update_from_zone_config(zone_config)
@@ -674,8 +692,9 @@ def main():
         # Role config
         before_expired_hours=dict(type='int', required=False, default=72),
         renew=dict(type='bool', required=False, default=True),
-        pkcs12_format=dict(type='bool', default=False, required=False)
-
+        pkcs12_format=dict(type='bool', default=False, required=False),
+        validity_hours=dict(type='int', required=False),
+        issuer_hint=dict(type='str', choices=[DEFAULT, DIGICERT, ENTRUST, MICROSOFT], default=DEFAULT, required=False)
     )
     module = AnsibleModule(
         # define the available arguments/parameters that a user can pass to the module

@@ -127,6 +127,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_common_name`                | *Common Name* to request for the certificate.<br/>Default: `"{{ ansible_fqdn }}"` |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
+   | `issuer_hint`                            | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
    | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |
    | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |
@@ -138,6 +139,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_remote_execution`           | Specifies whether cryptographic assets will be generated remotely, or locally and then provisioned to the remote host<br/>Default: `false` | 
    | `certificate_remote_privatekey_path`     | Directory on remote host where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
    | `certificate_renew`                      | Specifies whether to renew the certificate if it is within the "before_expired_hours" window when the playbook is run<br/>Default: `true` |
+   | `certificate_validity_hours`             | Indicates the validity period of the certificate before it expires |
 
    Defaults are defined in the [defaults/main.yml](defaults/main.yml) file.
 

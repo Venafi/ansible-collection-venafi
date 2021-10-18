@@ -20,6 +20,8 @@
     before_expired_hours: "{{ certificate_before_expired_hours | default(omit) }}"
     force: "{{ certificate_force if certificate_force is defined else false }}"
     pkcs12_format: "{{ certificate_pkcs12_format | default(omit) }}"
+    validity_hours: "{{ certificate_validity_hours | default(omit) }}"
+    issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
   register: certout
 - name: "dump test output"
   debug:
