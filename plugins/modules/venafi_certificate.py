@@ -249,7 +249,7 @@ except ImportError:
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType
+    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED
 except ImportError:
     HAS_VCERT = False
 try:
@@ -299,6 +299,7 @@ class VCertificate:
         self.privatekey_reuse = module.params['privatekey_reuse']
         self.chain_filename = module.params['chain_path']
         self.csr_path = module.params['csr_path']
+        self.csr_origin = module.params['csr_origin']
         self.args = ""
         self.changed = False
         self.module = module
@@ -397,6 +398,13 @@ class VCertificate:
         request.email_addresses = self.email_addresses
 
         request.chain_option = self.module.params['chain_option']
+        if self.csr_origin:
+            request.csr_origin = self.csr_origin
+            if self.csr_origin.lower() == "service":
+                if not self.privatekey_passphrase:
+                    self.module.fail_json(msg=("Missing parameter for Service Generated CSR: " 
+                       "privatekey_passphrase"))
+                request.include_private_key = True
         try:
             csr = open(self.csr_path, "rb").read()
             request.csr = csr
@@ -418,9 +426,7 @@ class VCertificate:
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
         if not use_existed_key:
-            self._atomic_write(self.privatekey_filename,
-                               request.private_key_pem)
-        # todo: server generated private key
+            self._atomic_write(self.privatekey_filename, cert.key)
 
     def _atomic_write(self, path, content):
         suffix = ".atomic_%s" % random.randint(100, 100000)
@@ -643,8 +649,8 @@ def main():
         # Endpoint
         zone=dict(type='str', required=False, default=''),
         # General properties of a certificate
-        path=dict(type='path', aliases=['cert_path'], require=True),
-        chain_path=dict(type='path', require=False),
+        path=dict(type='path', aliases=['cert_path'], required=True),
+        chain_path=dict(type='path', required=False),
         privatekey_path=dict(type='path', required=False),
         privatekey_type=dict(type='str', required=False),
         privatekey_size=dict(type='int', required=False),
@@ -654,7 +660,10 @@ def main():
         alt_name=dict(type='list', aliases=['subjectAltName'], elements='str'),
         common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
         chain_option=dict(type='str', required=False, default='last'),
-        csr_path=dict(type='path', require=False),
+        csr_path=dict(type='path', required=False),
+        csr_origin=dict(type='str', 
+                        choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED], 
+                        default=CSR_ORIGIN_LOCAL),
         # Role config
         before_expired_hours=dict(type='int', required=False, default=72),
         renew=dict(type='bool', required=False, default=True)

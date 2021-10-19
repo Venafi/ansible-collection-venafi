@@ -129,6 +129,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_chain_path`                 | Local directory where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
    | `certificate_privatekey_path`            | Local directory where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
+   | `certificate_csr_origin`                 | Speficies CSR Origin. Options: Local - Generate CSR locally, Provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` | 
    | `certificate_remote_execution`           | Specifies whether cryptographic assets will be generated remotely, or locally and then provisioned to the remote host<br/>Default: `false` |
    | `certificate_remote_cert_path`           | Directory on remote host where certificate files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
    | `certificate_remote_chain_path`          | Directory on remote host where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
