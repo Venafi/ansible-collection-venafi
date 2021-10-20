@@ -44,7 +44,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    ansible-galaxy collection install venafi.machine_identity
    ```
 
-1. Create the `credentials.yml` and populate it with connection parameters:
+2. Create the `credentials.yml` and populate it with connection parameters:
 
    **Trust Protection Platform**:
    
@@ -79,7 +79,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `user`         | **[DEPRECATED]** Trust Protection Platform WebSDK username, use `access_token` if possible |
    | `zone`         | Policy folder for TPP or Application name and Issuing Template API Alias for VaaS (e.g. "Business App\Enterprise CIT") |
 
-1. Use `ansible-vault` to encrypt the `credentials.yml` file using a password.  This is optional but highly recommended.
+3. Use `ansible-vault` to encrypt the `credentials.yml` file using a password.  This is optional but highly recommended.
    As long as you know the password you can always decrypt the file to make changes and then re-encrypt it.
    Go to https://docs.ansible.com/ansible/latest/user_guide/vault.html for more information.
 
@@ -87,7 +87,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    ansible-vault encrypt credentials.yml
    ```
 
-1. Write a simple playbook called, for example, `sample.yml`.
+4. Write a simple playbook called, for example, `sample.yml`.
 
    ```yaml
    - hosts: localhost
@@ -97,7 +97,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
          certificate_cert_dir: "/tmp/etc/ssl/"
    ```
 
-1. Run the playbook.
+5. Run the playbook.
 
    ```sh
    ansible-playbook sample.yml --ask-vault-pass
@@ -106,7 +106,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    Running the playbook will generate a certificate and place it into folder in /tmp/etc/ssl/ directory.
    The `--ask-vault-pass` parameter is needed if you encrypted the `credentials.yml` file.
    
-1. Additional playbook variables can be added to specify properties of the certificate and key pair, file locations, 
+6. Additional playbook variables can be added to specify properties of the certificate and key pair, file locations, 
    and to override default behaviors.
    
    ```sh
@@ -124,6 +124,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_chain_option`               | Specifies whether the root CA certificate appears `"last"` (default) or `"first"` in the chain file |
    | `certificate_chain_path`                 | Local directory where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
    | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
+   | `certificate_csr_origin`                 | Speficies CSR Origin. Options: Local - Generate CSR locally, Provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_common_name`                | *Common Name* to request for the certificate.<br/>Default: `"{{ ansible_fqdn }}"` |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
