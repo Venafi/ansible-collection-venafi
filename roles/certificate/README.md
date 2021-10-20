@@ -123,12 +123,12 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_cert_path`                  | Local directory where certificate files will be stored<br/>Default: `{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
    | `certificate_chain_option`               | Specifies whether the root CA certificate appears `"last"` (default) or `"first"` in the chain file |
    | `certificate_chain_path`                 | Local directory where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
-   | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
-   | `certificate_csr_origin`                 | Speficies CSR Origin. Options: Local - Generate CSR locally, Provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
-   | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_common_name`                | *Common Name* to request for the certificate.<br/>Default: `"{{ ansible_fqdn }}"` |
+   | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
+   | `certificate_csr_origin`                 | Specifies the source of the CSR used to request a certificate. Options:<br/>local - Generate CSR locally, provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
+   | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
-   | `issuer_hint`                            | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
+   | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
    | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |
    | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |

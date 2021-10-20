@@ -67,6 +67,26 @@ options:
         aliases:
             - CN
             - commonName
+    csr_origin:
+        description:
+            - Indicates the source of the CSR used for a certificate request.
+            - C(provided): the CSR at I(csr_path) will be used to request a new certificate.
+            - C(local): a CSR will be generated locally using the values provided in I(privatekey_xxx) fields.
+            - C(service): the CSR will be generated on the service side (TPP or VaaS).
+        required: false
+        default: LOCAL
+        choices:
+            - provided
+            - local
+            - service
+        type: str
+    csr_path:
+        description:
+            - Path to the Certificate Signing Request to use when requesting a new certificate.
+            - This field is required when I(csr_origin) is C(provided).
+        required: false
+        default: null
+        type: path
     issuer_hint:
         description:
             - Issuer of the certificate. Ignored when platform is not TPP.
@@ -126,7 +146,7 @@ options:
             - Try to renew certificate if is existing but not valid.
         default: true
         type: bool
-    use_pkcs12:
+    use_pkcs12_format:
         description:
             - Use PKCS12 format to serialize the certificate.
         default: false
@@ -138,6 +158,11 @@ options:
         required: false
         default: null
         type: int
+    zone:
+        description:
+            - The location of the certificate on the Venafi platform.
+        required: true
+        type: str
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
@@ -274,13 +299,32 @@ except ImportError:
     HAS_CRYPTOGRAPHY = False
 
 # Some strings variables
-STRING_FAILED_TO_CHECK_CERT_VALIDITY = "Certificate is not yet valid, " \
-                                       "has expired, or has CN or SANs " \
-                                       "that differ from the request"
+STRING_FAILED_TO_CHECK_CERT_VALIDITY = "Certificate is not yet valid, has expired, " \
+                                       "or has CN or SANs that differ from the request"
 STRING_PKEY_NOT_MATCHED = "Private key does not match certificate public key"
 STRING_BAD_PKEY = "Private key file does not contain a valid private key"
 STRING_CERT_FILE_NOT_EXISTS = "Certificate file does not exist"
 STRING_BAD_PERMISSIONS = "Insufficient file permissions"
+
+F_ZONE = "zone"
+F_CERT_PATH = "cert_path"
+F_CHAIN_PATH = "chain_path"
+F_PK_PATH = "privatekey_path"
+F_PK_TYPE = "privatekey_type"
+F_PK_SIZE = "privatekey_size"
+F_PK_CURVE = "privatekey_curve"
+F_PK_PASSPHRASE = "privatekey_passphrase"
+F_PK_REUSE = "privatekey_reuse"
+F_ALT_NAMES = "alt_name"
+F_CN = "common_name"
+F_CHAIN_OPTION = "chain_option"
+F_CSR_PATH = "csr_path"
+F_CSR_ORIGIN = "csr_origin"
+F_B4_EXPIRED_HOURS = "before_expired_hours"
+F_RENEW = "renew"
+F_USE_PKCS12 = "use_pkcs12_format"
+F_VALIDITY_HOURS = "validity_hours"
+F_ISSUER_HINT = "issuer_hint"
 
 
 class VCertificate:
@@ -288,40 +332,42 @@ class VCertificate:
         """
         :param AnsibleModule module:
         """
-        self.connection = get_venafi_connection(module)
-        self.common_name = module.params['common_name']
-
-        self.zone = module.params['zone']
-        self.privatekey_filename = module.params['privatekey_path']
-        self.certificate_filename = module.params['cert_path']
-        self.privatekey_type = module.params['privatekey_type']
-
-        if module.params['privatekey_curve']:
-            if not module.params['privatekey_type']:
-                module.fail_json(
-                    msg="privatekey_type should be "
-                        "set if privatekey_curve configured")
-        self.privatekey_curve = module.params['privatekey_curve']
-        if module.params['privatekey_size']:
-            if not module.params['privatekey_type']:
-                module.fail_json(
-                    msg="privatekey_type should be set if "
-                        "privatekey_size configured")
-        self.privatekey_size = module.params['privatekey_size']
-        self.privatekey_passphrase = module.params['privatekey_passphrase']
-        self.privatekey_reuse = module.params['privatekey_reuse']
-        self.chain_filename = module.params['chain_path']
-        self.csr_path = module.params['csr_path']
-        self.csr_origin = module.params['csr_origin']
         self.args = ""
         self.changed = False
         self.module = module
+
+        self.connection = get_venafi_connection(module)
+        self.common_name = module.params[F_CN]
+        self.zone = module.params[F_ZONE]
+        self.csr_origin = module.params[F_CSR_ORIGIN]
+        self.chain_option = module.params[F_CHAIN_OPTION]
+        self.before_expired_hours = module.params[F_B4_EXPIRED_HOURS]
+        self.use_pkcs12 = module.params[F_USE_PKCS12]
+        self.validity_hours = module.params[F_VALIDITY_HOURS]
+        hint = module.params[F_ISSUER_HINT]
+        self.issuer_hint = get_issuer_hint(hint)
+
+        self.certificate_filename = module.params[F_CERT_PATH]
+        self.chain_filename = module.params[F_CHAIN_PATH]
+        self.csr_path = module.params[F_CSR_PATH]
+        self.privatekey_filename = module.params[F_PK_PATH]
+
+        self.privatekey_type = module.params[F_PK_TYPE]
+        self.privatekey_curve = module.params[F_PK_CURVE]
+        self.privatekey_size = module.params[F_PK_SIZE]
+        self.privatekey_passphrase = module.params[F_PK_PASSPHRASE]
+        self.privatekey_reuse = module.params[F_PK_REUSE]
+        if self.privatekey_curve and not self.privatekey_type:
+            module.fail_json(msg="%s should be set if %s configured" % (F_PK_TYPE, F_PK_CURVE))
+        if self.privatekey_size and not self.privatekey_type:
+            module.fail_json(msg="%s should be set if %s configured" % (F_PK_TYPE, F_PK_SIZE))
+
         self.ip_addresses = []
         self.email_addresses = []
         self.san_dns = []
         self.changed_message = []
-        if module.params['alt_name']:
-            for n in module.params['alt_name']:
+        if module.params[F_ALT_NAMES]:
+            for n in module.params[F_ALT_NAMES]:
                 if n.startswith(("IP:", "IP Address:")):
                     ip = n.split(":", 1)[1]
                     self.ip_addresses.append(ip)
@@ -332,14 +378,10 @@ class VCertificate:
                     mail = n.split(":", 1)[1]
                     self.email_addresses.append(mail)
                 else:
-                    self.module.fail_json(
-                        msg="Failed to determine extension type: %s" % n)
-
-        self.before_expired_hours = module.params['before_expired_hours']
-        self.use_pkcs12 = module.params['pkcs12_format']
-        self.validity_hours = module.params['validity_hours']
-        hint = module.params['issuer_hint']
-        self.issuer_hint = get_issuer_hint(hint)
+                    self.module.fail_json(msg="Failed to determine extension type: %s" % n)
+        # If csr_path exists, it takes priority over any other value (csr_origin)
+        if os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
+            self.csr_origin = CSR_ORIGIN_PROVIDED
 
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
@@ -350,8 +392,7 @@ class VCertificate:
             if os.path.isdir(p):
                 continue
             elif os.path.exists(p):
-                self.module.fail_json(
-                    msg="Path %s already exists but this is not directory" % p)
+                self.module.fail_json(msg="Path %s already exists but this is not directory" % p)
             elif not os.path.exists(p):
                 self.module.fail_json(msg="Directory %s does not exists" % p)
             ok = False
@@ -366,8 +407,7 @@ class VCertificate:
 
         r = CertificateRequest(private_key=private_key,
                                key_password=self.privatekey_passphrase)
-        key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}. \
-            get(self.privatekey_type)
+        key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
         if key_type and key_type != r.key_type.key_type:
             return False
         if key_type == "rsa" and self.privatekey_size:
@@ -383,62 +423,57 @@ class VCertificate:
             common_name=self.common_name,
             key_password=self.privatekey_passphrase,
             origin="Red Hat Ansible",
+            csr_origin=self.csr_origin,
             validity_hours=self.validity_hours,
-            issuer_hint=self.issuer_hint
+            issuer_hint=self.issuer_hint,
+            ip_addresses=self.ip_addresses,
+            san_dns=self.san_dns,
+            email_addresses=self.email_addresses,
         )
+        request.chain_option = self.chain_option
         zone_config = self.connection.read_zone_conf(self.zone)
         request.update_from_zone_config(zone_config)
 
-        use_existed_key = False
-        if self._check_private_key_correct() and not self.privatekey_reuse:
-            private_key = to_text(open(self.privatekey_filename, "rb").read())
-            request.private_key = private_key
-            use_existed_key = True
-        elif self.privatekey_type:
-            key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}. \
-                get(self.privatekey_type)
-            if not key_type:
-                self.module.fail_json(msg=(
-                    "Failed to determine key type: %s."
-                    "Must be RSA or ECDSA" % self.privatekey_type))
-            if key_type == "rsa":
-                request.key_type = KeyType(KeyType.RSA,
-                                           self.privatekey_size)
-            elif key_type == "ecdsa" or "ec":
-                request.key_type = KeyType(KeyType.ECDSA,
-                                           self.privatekey_curve)
+        serialize_private_key = True
+        if self.csr_origin == CSR_ORIGIN_SERVICE:
+            if request.key_password is None:
+                self.module.fail_json(msg="Missing parameter for Service Generated CSR: %s" % F_PK_PASSPHRASE)
+            request.include_private_key = True
+
+        elif self.csr_origin == CSR_ORIGIN_PROVIDED:
+            if not self.csr_path:
+                self.module.fail_json(msg="Missing parameter for User Provided CSR: %s" % F_CSR_PATH)
+            try:
+                csr = open(self.csr_path, "rb").read()
+                request.csr = csr
+            except Exception as e:
+                self.module.fail_json(msg="Failed to read CSR file: %s.\nIO Error: %s" % (self.csr_path, str(e)))
+
+        elif self.csr_origin == CSR_ORIGIN_LOCAL:
+            if self._check_private_key_correct() and not self.privatekey_reuse:
+                private_key = to_text(open(self.privatekey_filename, "rb").read())
+                request.private_key = private_key
+                serialize_private_key = False
+            elif self.privatekey_type:
+                key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
+                if not key_type:
+                    self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
+                                               % self.privatekey_type))
+                if key_type == "rsa":
+                    request.key_type = KeyType(KeyType.RSA, self.privatekey_size)
+                elif key_type == "ecdsa" or "ec":
+                    request.key_type = KeyType(KeyType.ECDSA, self.privatekey_curve)
+                else:
+                    self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
+                                               % self.privatekey_type))
             else:
-                self.module.fail_json(msg=(
-                    "Failed to determine key type: %s."
-                    "Must be RSA or ECDSA" % self.privatekey_type))
-
-        request.ip_addresses = self.ip_addresses
-        request.san_dns = self.san_dns
-        request.email_addresses = self.email_addresses
-
-        request.chain_option = self.module.params['chain_option']
-        if self.csr_origin:
-            request.csr_origin = self.csr_origin
-            if self.csr_origin.lower() == "service":
-                if not self.privatekey_passphrase:
-                    self.module.fail_json(msg=("Missing parameter for Service Generated CSR: " 
-                       "privatekey_passphrase"))
-                request.include_private_key = True
-        try:
-            csr = open(self.csr_path, "rb").read()
-            request.csr = csr
-        except Exception as e:
-            self.module.log(msg=str(e))
-            pass
+                self.module.fail_json(msg="Missing parameter for Local CSR: %s or %s" % (F_PK_PATH, F_PK_TYPE))
+        else:
+            self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
 
         self.connection.request_cert(request, self.zone)
-        print(request.csr)
-        while True:
-            cert = self.connection.retrieve_cert(request)  # vcert.Certificate
-            if cert:
-                break
-            else:
-                time.sleep(5)
+        cert = self.connection.retrieve_cert(request)
+
         if self.use_pkcs12:
             self._atomic_write(self._get_pkcs12_cert_path(), cert.as_pkcs12(passphrase=self.privatekey_passphrase))
         elif self.chain_filename:
@@ -446,7 +481,8 @@ class VCertificate:
             self._atomic_write(self.certificate_filename, cert.cert)
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
-        if not use_existed_key:
+
+        if serialize_private_key:
             self._atomic_write(self.privatekey_filename, cert.key)
 
     def _get_pkcs12_cert_path(self):
@@ -680,30 +716,27 @@ def main():
     args = module_common_argument_spec()
     args.update(venafi_common_argument_spec())
     args.update(
-        # Endpoint
-        zone=dict(type='str', required=False, default=''),
         # General properties of a certificate
-        path=dict(type='path', aliases=['cert_path'], required=True),
+        alt_name=dict(type='list', aliases=['subjectAltName'], elements='str'),
+        before_expired_hours=dict(type='int', required=False, default=72),
+        chain_option=dict(type='str', required=False, default='last'),
         chain_path=dict(type='path', required=False),
-        privatekey_path=dict(type='path', required=False),
-        privatekey_type=dict(type='str', required=False),
-        privatekey_size=dict(type='int', required=False),
+        common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
+        csr_origin=dict(type='str', choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED],
+                        default=CSR_ORIGIN_LOCAL),
+        csr_path=dict(type='path', required=False),
+        issuer_hint=dict(type='str', choices=[DEFAULT, DIGICERT, ENTRUST, MICROSOFT], default=DEFAULT, required=False),
+        path=dict(type='path', aliases=['cert_path'], required=True),
         privatekey_curve=dict(type='str', required=False),
         privatekey_passphrase=dict(type='str', no_log=True),
+        privatekey_path=dict(type='path', required=False),
         privatekey_reuse=dict(type='bool', required=False, default=True),
-        alt_name=dict(type='list', aliases=['subjectAltName'], elements='str'),
-        common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
-        chain_option=dict(type='str', required=False, default='last'),
-        csr_path=dict(type='path', required=False),
-        csr_origin=dict(type='str',
-                        choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED],
-                        default=CSR_ORIGIN_LOCAL),
-        # Role config
-        before_expired_hours=dict(type='int', required=False, default=72),
+        privatekey_size=dict(type='int', required=False),
+        privatekey_type=dict(type='str', required=False),
         renew=dict(type='bool', required=False, default=True),
-        pkcs12_format=dict(type='bool', default=False, required=False),
+        use_pkcs12_format=dict(type='bool', default=False, required=False),
         validity_hours=dict(type='int', required=False),
-        issuer_hint=dict(type='str', choices=[DEFAULT, DIGICERT, ENTRUST, MICROSOFT], default=DEFAULT, required=False)
+        zone=dict(type='str', required=False, default='')
     )
     module = AnsibleModule(
         # define the available arguments/parameters that a user can pass to the module

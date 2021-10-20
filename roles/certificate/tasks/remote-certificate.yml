@@ -13,6 +13,7 @@
     cert_path: "{{ certificate_cert_path }}"
     chain_path: "{{ certificate_chain_path | default(omit) }}"
     csr_origin: "{{ certificate_csr_origin | default(omit) }}"
+    csr_path: "{{ certificate_csr_path | default(omit) }}"
     privatekey_path: "{{ certificate_privatekey_path | default(omit) }}"
     privatekey_type: "{{ certificate_privatekey_type | default(omit) }}"
     privatekey_size: "{{ certificate_privatekey_size | default(omit) }}"

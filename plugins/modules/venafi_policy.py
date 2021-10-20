@@ -31,7 +31,6 @@ options:
             - The location where the Policy Specification will be created on the Venafi platform.
         required: true
         type: str
-
     policy_spec_path:
         description:
             - The path in the host of the Policy Specification file.
