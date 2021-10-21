@@ -70,11 +70,11 @@ options:
     csr_origin:
         description:
             - Indicates the source of the CSR used for a certificate request.
-            - C(provided): the CSR at I(csr_path) will be used to request a new certificate.
-            - C(local): a CSR will be generated locally using the values provided in I(privatekey_xxx) fields.
-            - C(service): the CSR will be generated on the service side (TPP or VaaS).
+            - C(provided) - The CSR at I(csr_path) will be used to request a new certificate.
+            - C(local) - The CSR will be generated locally using the values provided through I(privatekey_x) fields.
+            - C(service) - The CSR will be generated on the service side (TPP or VaaS).
         required: false
-        default: LOCAL
+        default: local
         choices:
             - provided
             - local
@@ -295,6 +295,7 @@ try:
     from cryptography.hazmat.backends import default_backend
     from cryptography.x509.oid import NameOID, ExtensionOID
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.serialization import pkcs12
 except ImportError:
     HAS_CRYPTOGRAPHY = False
 
@@ -466,8 +467,6 @@ class VCertificate:
                 else:
                     self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
                                                % self.privatekey_type))
-            else:
-                self.module.fail_json(msg="Missing parameter for Local CSR: %s or %s" % (F_PK_PATH, F_PK_TYPE))
         else:
             self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
 
@@ -475,7 +474,8 @@ class VCertificate:
         cert = self.connection.retrieve_cert(request)
 
         if self.use_pkcs12:
-            self._atomic_write(self._get_pkcs12_cert_path(), cert.as_pkcs12(passphrase=self.privatekey_passphrase))
+            self.certificate_filename = self._get_pkcs12_cert_path()
+            self._atomic_write(self.certificate_filename, cert.as_pkcs12(passphrase=self.privatekey_passphrase))
         elif self.chain_filename:
             self._atomic_write(self.chain_filename, "\n".join(cert.chain))
             self._atomic_write(self.certificate_filename, cert.cert)
@@ -655,15 +655,16 @@ class VCertificate:
             try:
                 with open(self.certificate_filename, 'rb') as cert_data:
                     try:
-                        cert = x509.load_pem_x509_certificate(
-                            cert_data.read(), default_backend())
+                        if self.use_pkcs12:
+                            b_pass = self.privatekey_passphrase.encode() if self.privatekey_passphrase else None
+                            pk, cert, _ = pkcs12.load_key_and_certificates(cert_data.read(), b_pass, default_backend())
+                        else:
+                            cert = x509.load_pem_x509_certificate(cert_data.read(), default_backend())
                     except Exception:
-                        self.module.fail_json(
-                            msg="Failed to load certificate from file: %s"
-                                % self.certificate_filename)
+                        self.module.fail_json(msg="Failed to load certificate from file: %s"
+                                                  % self.certificate_filename)
             except OSError as exc:
-                self.module.fail_json(
-                    msg="Failed to read certificate file: %s" % exc)
+                self.module.fail_json(msg="Failed to read certificate file: %s" % exc)
 
             if not self._check_public_key_matched_to_private_key(cert):
                 result['changed'] = True
