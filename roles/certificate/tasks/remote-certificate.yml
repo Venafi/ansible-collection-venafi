@@ -25,6 +25,7 @@
     use_pkcs12_format: "{{ certificate_pkcs12_format | default(omit) }}"
     validity_hours: "{{ certificate_validity_hours | default(omit) }}"
     issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
+    custom_fields: "{{ certificate_custom_fields | default(omit) }}"
   register: certout
 - name: "dump test output"
   debug:

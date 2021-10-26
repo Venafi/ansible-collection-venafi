@@ -127,6 +127,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
    | `certificate_csr_origin`                 | Specifies the source of the CSR used to request a certificate. Options:<br/>local - Generate CSR locally, provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
+   | `certificate_custom_fields`              | Map of custom-defined attributes for the certificate, declared as key-value format. Example: <pre lang="yaml">certificate_custom_fields:<br/>  custom: asd<br/>  cfList: item3<br/>  cfListMulti: [tier1, tier4]</pre> |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
    | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
    | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |

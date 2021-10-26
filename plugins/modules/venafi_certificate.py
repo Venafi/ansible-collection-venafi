@@ -87,6 +87,11 @@ options:
         required: false
         default: null
         type: path
+    custom_fields:
+        description:
+            - A key-value map of customer-defined attributes for the certificate.
+        default: null
+        type:dict
     issuer_hint:
         description:
             - Issuer of the certificate. Ignored when platform is not TPP.
@@ -287,7 +292,8 @@ except ImportError:
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, IssuerHint
+    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, \
+        IssuerHint, CustomField
 except ImportError:
     HAS_VCERT = False
 try:
@@ -326,6 +332,7 @@ F_RENEW = "renew"
 F_USE_PKCS12 = "use_pkcs12_format"
 F_VALIDITY_HOURS = "validity_hours"
 F_ISSUER_HINT = "issuer_hint"
+F_CUSTOM_FIELDS = "custom_fields"
 
 
 class VCertificate:
@@ -347,6 +354,7 @@ class VCertificate:
         self.validity_hours = module.params[F_VALIDITY_HOURS]
         hint = module.params[F_ISSUER_HINT]
         self.issuer_hint = get_issuer_hint(hint)
+        self.custom_fields = module.params[F_CUSTOM_FIELDS]  # type: dict
 
         self.certificate_filename = module.params[F_CERT_PATH]
         self.chain_filename = module.params[F_CHAIN_PATH]
@@ -380,6 +388,7 @@ class VCertificate:
                     self.email_addresses.append(mail)
                 else:
                     self.module.fail_json(msg="Failed to determine extension type: %s" % n)
+
         # If csr_path exists, it takes priority over any other value (csr_origin)
         if os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
             self.csr_origin = CSR_ORIGIN_PROVIDED
@@ -469,6 +478,17 @@ class VCertificate:
                                                % self.privatekey_type))
         else:
             self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
+
+        if self.custom_fields:
+            cf_list = []
+            for key, value in self.custom_fields.items():
+                if isinstance(value, list):
+                    # Multiple values for same entry
+                    for item in value:
+                        cf_list.append(CustomField(name=key, value=item))
+                else:
+                    cf_list.append(CustomField(name=key, value=value))
+            request.custom_fields = cf_list
 
         self.connection.request_cert(request, self.zone)
         cert = self.connection.retrieve_cert(request)
@@ -726,6 +746,7 @@ def main():
         csr_origin=dict(type='str', choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED],
                         default=CSR_ORIGIN_LOCAL),
         csr_path=dict(type='path', required=False),
+        custom_fields=dict(type='dict', required=False),
         issuer_hint=dict(type='str', choices=[DEFAULT, DIGICERT, ENTRUST, MICROSOFT], default=DEFAULT, required=False),
         path=dict(type='path', aliases=['cert_path'], required=True),
         privatekey_curve=dict(type='str', required=False),
