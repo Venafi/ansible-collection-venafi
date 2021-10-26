@@ -13,6 +13,7 @@
     cert_path: "{{ certificate_cert_path }}"
     chain_path: "{{ certificate_chain_path | default(omit) }}"
     csr_origin: "{{ certificate_csr_origin | default(omit) }}"
+    csr_path: "{{ certificate_csr_path | default(omit) }}"
     privatekey_path: "{{ certificate_privatekey_path | default(omit) }}"
     privatekey_type: "{{ certificate_privatekey_type | default(omit) }}"
     privatekey_size: "{{ certificate_privatekey_size | default(omit) }}"
@@ -21,6 +22,9 @@
     alt_name: "{{ certificate_alt_name | default([]) }}"
     before_expired_hours: "{{ certificate_before_expired_hours | default(omit) }}"
     force: "{{ certificate_force if certificate_force is defined else false }}"
+    use_pkcs12_format: "{{ certificate_pkcs12_format | default(omit) }}"
+    validity_hours: "{{ certificate_validity_hours | default(omit) }}"
+    issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
   register: certout
 - name: "dump test output"
   debug:

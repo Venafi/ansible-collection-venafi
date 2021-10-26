@@ -39,7 +39,7 @@ options:
     private_key_path:
         description:
             - The path where the private key is going to be stored in the remote host.
-            - Ignored when I(ssh_key_generation_type) is "provided"
+            - Ignored when I(ssh_key_generation_type) is C(provided)
         type: path
     ssh_key_generation_type:
         description:
