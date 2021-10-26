@@ -87,6 +87,11 @@ options:
         required: false
         default: null
         type: path
+    custom_fields:
+        description:
+            - A key-value map of customer-defined attributes for the certificate.
+        default: null
+        type:dict
     issuer_hint:
         description:
             - Issuer of the certificate. Ignored when platform is not TPP.
@@ -163,11 +168,6 @@ options:
             - The location of the certificate on the Venafi platform.
         required: true
         type: str
-    custom_fields:
-        description:
-            - A key/value map of customer-defined attributes for the certificate.
-        default: null
-        type:dict
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
@@ -292,7 +292,8 @@ except ImportError:
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, IssuerHint
+    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, \
+        IssuerHint, CustomField
 except ImportError:
     HAS_VCERT = False
 try:
@@ -331,6 +332,7 @@ F_RENEW = "renew"
 F_USE_PKCS12 = "use_pkcs12_format"
 F_VALIDITY_HOURS = "validity_hours"
 F_ISSUER_HINT = "issuer_hint"
+F_CUSTOM_FIELDS = "custom_fields"
 
 
 class VCertificate:
@@ -352,6 +354,7 @@ class VCertificate:
         self.validity_hours = module.params[F_VALIDITY_HOURS]
         hint = module.params[F_ISSUER_HINT]
         self.issuer_hint = get_issuer_hint(hint)
+        self.custom_fields = module.params[F_CUSTOM_FIELDS]  # type: dict
 
         self.certificate_filename = module.params[F_CERT_PATH]
         self.chain_filename = module.params[F_CHAIN_PATH]
@@ -385,10 +388,10 @@ class VCertificate:
                     self.email_addresses.append(mail)
                 else:
                     self.module.fail_json(msg="Failed to determine extension type: %s" % n)
+
         # If csr_path exists, it takes priority over any other value (csr_origin)
         if os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
             self.csr_origin = CSR_ORIGIN_PROVIDED
-        self.custom_fields = module.params['custom_fields']  # type: dict
 
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
