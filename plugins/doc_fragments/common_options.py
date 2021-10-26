@@ -20,7 +20,7 @@ class ModuleDocFragment(object):
 options:
     state:
         description:
-            - Whether the Policy should be created or deleted, taking action if the state is different from what is stated.
+            - Whether the resource should be created or deleted, taking action if the state is different from what is stated.
         default: present
         choices:
             - present

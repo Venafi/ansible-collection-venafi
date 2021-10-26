@@ -16,7 +16,12 @@
 #
 from ansible.module_utils.basic import AnsibleModule
 
-from vcert import Connection, venafi_connection, CommonConnection
+from vcert import Connection, venafi_connection, CommonConnection, IssuerHint
+
+DEFAULT = 'DEFAULT'
+DIGICERT = 'DIGICERT'
+ENTRUST = 'ENTRUST'
+MICROSOFT = 'MICROSOFT'
 
 
 def venafi_common_argument_spec():
@@ -92,3 +97,22 @@ def get_venafi_connection(module):
             ),
             fake=test_mode
         )
+
+
+def get_issuer_hint(hint):
+    if not hint:
+        return None
+    elif hint == DIGICERT:
+        return IssuerHint.DIGICERT
+    elif hint == ENTRUST:
+        return IssuerHint.ENTRUST
+    elif hint == MICROSOFT:
+        return IssuerHint.MICROSOFT
+    elif hint == DEFAULT:
+        return IssuerHint.DEFAULT
+    else:
+        raise VenafiAnsibleError("Issuer Hint not valid: %s" % hint)
+
+
+class VenafiAnsibleError(Exception):
+    pass

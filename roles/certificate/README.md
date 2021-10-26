@@ -105,7 +105,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    
    Running the playbook will generate a certificate and place it into folder in /tmp/etc/ssl/ directory.
    The `--ask-vault-pass` parameter is needed if you encrypted the `credentials.yml` file.
-
+   
 6. Additional playbook variables can be added to specify properties of the certificate and key pair, file locations, 
    and to override default behaviors.
    
@@ -116,7 +116,8 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
 
    | Variable Name                            | Description                                                  |
    | ---------------------------------------- | ------------------------------------------------------------ |
-   | `certificate_alt_name`                   | Comma separated list of *Subject Alternative Names* to request for the certificate.  Prefix each value with the SAN type.<br/>Example: `"DNS:host.example.com,IP:10.20.30.40,email:me@example.com"` |
+   | `credentials_file`                       | Name of the file containing Venafi credentials and connection settings<br/>Default: `credentials.yml` |
+   | `certificate_alt_name`                   | Comma separated list of *Subject Alternative Names* to request for the certificate.  Prefix each value with the SAN type.<br/>Example: `"DNS:host.example.com,IP:10.20.30.40,email:me@example.com"` |                                                              |
    | `certificate_before_expired_hours`       | Number of hours prior to the expiration of the certificate before it can be renewed<br/>Default: `72` |
    | `certificate_cert_dir`                   | Local parent directory where the cryptographic assets will be stored<br/>Default: `"/etc/ssl/{{ certificate_common_name }}"` |
    | `certificate_cert_path`                  | Local directory where certificate files will be stored<br/>Default: `{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
@@ -124,20 +125,23 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_chain_path`                 | Local directory where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
    | `certificate_common_name`                | *Common Name* to request for the certificate.<br/>Default: `"{{ ansible_fqdn }}"` |
    | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
+   | `certificate_csr_origin`                 | Specifies the source of the CSR used to request a certificate. Options:<br/>local - Generate CSR locally, provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_custom_fields`              | Map of custom-defined attributes for the certificate, declared as key-value format.<br/> |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
-   | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) |
+   | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
+   | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |
+   | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |
    | `certificate_privatekey_path`            | Local directory where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
    | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) |
    | `certificate_privatekey_type`            | Key algorithm, "RSA" or "ECDSA"<br/>Default: `"RSA"` (from VCert) |
    | `certificate_remote_cert_path`           | Directory on remote host where certificate files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
    | `certificate_remote_chain_path`          | Directory on remote host where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
-   | `certificate_remote_execution`           | Specifies whether cryptographic assets will be generated remotely, or locally and then provisioned to the remote host<br/>Default: `false` |
+   | `certificate_remote_execution`           | Specifies whether cryptographic assets will be generated remotely, or locally and then provisioned to the remote host<br/>Default: `false` | 
    | `certificate_remote_privatekey_path`     | Directory on remote host where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
    | `certificate_renew`                      | Specifies whether to renew the certificate if it is within the "before_expired_hours" window when the playbook is run<br/>Default: `true` |
-   | `credentials_file`                       | Name of the file containing Venafi credentials and connection settings<br/>Default: `credentials.yml` |
+   | `certificate_validity_hours`             | Indicates the validity period of the certificate before it expires |
 
    Defaults are defined in the [defaults/main.yml](defaults/main.yml) file.
 
