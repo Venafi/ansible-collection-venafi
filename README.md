@@ -32,6 +32,9 @@ pip install ansible vcert --upgrade
 
 ## Version History
 
+### 0.7.4
+    - Fixed issues with doc-string and custom fields description.
+    - Added version history to README.md
 ### 0.7.3
     - Added support for Service Generated CSR (contribution by @Kerrida)
     - Added support for PKCS12 output format for certificates.
