@@ -30,6 +30,26 @@ pip install ansible vcert --upgrade
 - [`venafi.machine_identity.certificate`](roles/certificate/README.md): Enrolls a certificate and optionally deploys it to a remote location.
 - [`venafi.machine_identity.policy`](roles/policy/README.md): Creates or updates certificate policy on VaaS or TPP using a specification file.
 
+## Version History
+
+### 0.7.4
+    - Fixed issues with doc-string and custom fields description.
+    - Added version history to README.md
+### 0.7.3
+    - Added support for Service Generated CSR (contribution by @Kerrida)
+    - Added support for PKCS12 output format for certificates.
+    - Added support for flexible validity periods when requesting a certificate.
+    - Added support for custom fields when requesting a certificate.
+### 0.7.2
+    - Minor fixes to SSH certificates on TPP.
+### 0.7.1
+    - Cleaned linter warnings on the collection.
+### 0.7.0
+    - Added support for SSH certificates (request, retrieve) on TPP.
+### 0.6.0
+    - Migrated from Venafi Ansible role to Machine Identity collection.
+    - Added support for Policy Management on TPP and VaaS
+
 ## License
 
 Copyright &copy; Venafi, Inc. All rights reserved.

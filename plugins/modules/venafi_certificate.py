@@ -91,7 +91,7 @@ options:
         description:
             - A key-value map of customer-defined attributes for the certificate.
         default: null
-        type:dict
+        type: dict
     issuer_hint:
         description:
             - Issuer of the certificate. Ignored when platform is not TPP.
