@@ -29,12 +29,14 @@ options:
     ca_template:        
         description:
             - The name of the Certificate Authority from whom the public key and principals is retrieved.
-        required: true if I(ca_guid) option not passed. 
+            - Either this option or I(ca_guid) must be provided to the module.
+        required: false
         type: str
     ca_guid:
         description:
             - The global unique identifier of the Certificate Authority from whom the public key is retrieved.
-        required: true if I(ca_template) option not passed.
+            - Either this option or I(ca_template) must be provided to the module.
+        required: false
         type: str
     public_key_path:
         description:
@@ -289,6 +291,7 @@ def main():
         argument_spec=args,
         supports_check_mode=True,
         add_file_common_args=True,
+        required_one_of=[(F_CA_GUID, F_CA_TEMPLATE)],
     )
     if not HAS_VCERT:
         module.fail_json(msg='"vcert" python library is required')
