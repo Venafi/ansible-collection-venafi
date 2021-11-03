@@ -22,7 +22,6 @@
     ca_template: "{{ ssh_ca_template | default(omit) }}"
     ca_guid: "{{ ssh_ca_guid | default(omit) }}"
     public_key_path: "{{ ssh_ca_public_key_path | default(omit) }}"
-    windows_cert: "{{ ssh_ca_windows_cert | default(omit) }}"
   delegate_to: localhost
   register: ca_out
 - name: "dump test output"
