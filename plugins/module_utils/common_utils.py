@@ -65,10 +65,11 @@ def module_common_argument_spec():
     return options
 
 
-def get_venafi_connection(module):
+def get_venafi_connection(module, platform=None):
     """
 
     :param AnsibleModule module:
+    :param VenafiPlatform platform:
     :return: a connection to an instance of a Venafi platform
     :rtype: CommonConnection
     """
@@ -89,7 +90,8 @@ def get_venafi_connection(module):
                              access_token=access_token,
                              api_key=apikey,
                              http_request_kwargs={"verify": trust_bundle} if trust_bundle else None,
-                             fake=test_mode)
+                             fake=test_mode,
+                             platform=platform)
 
 
 def get_access_token(connector, user, password, scope):
