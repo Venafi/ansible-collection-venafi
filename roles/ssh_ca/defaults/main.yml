@@ -1,0 +1,14 @@
+---
+credentials_file: credentials.yml
+
+# Use Ansible host FQDN for Certificate Authority public key filename
+ssh_ca_public_key_filename: "{{ ansible_fqdn }}"
+# Directory where to place Certificate Authority public key
+ssh_ca_dir: "/etc/ssh/ca/{{ ssh_ca_public_key_filename }}"
+ssh_ca_public_key_path: "{{ ssh_ca_dir }}/{{ ssh_ca_public_key_filename }}.pub"
+
+# Where to execute venafi_ssh_ca module. If set to false, Certificate Authority public key
+# will be created on ansible master host and then copied to the remote server
+ssh_ca_remote_execution: false
+# Remote location where to place the Certificate Authority public key
+ssh_ca_remote_public_key_path: "{{ ssh_ca_dir }}/{{ ssh_ca_public_key_filename }}.pub"
