@@ -121,15 +121,15 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, F_STATE, F_FORCE, \
-        F_STATE_PRESENT, F_STATE_ABSENT, F_USER, F_PASSWORD, get_access_token
+        F_STATE_PRESENT, F_STATE_ABSENT
 except ImportError:
     from plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, F_STATE, F_FORCE, \
-        F_STATE_PRESENT, F_STATE_ABSENT, F_USER, F_PASSWORD, get_access_token
+        F_STATE_PRESENT, F_STATE_ABSENT
 
 HAS_VCERT = True
 try:
-    from vcert import CommonConnection, SSHCertRequest, SSHKeyPair, SCOPE_SSH, SSHConfig, VenafiPlatform
+    from vcert import CommonConnection, SSHCertRequest, SSHKeyPair, SSHConfig, VenafiPlatform
     from vcert.ssh_utils import SSHRetrieveResponse, SSHCATemplateRequest
 except ImportError:
     HAS_VCERT = False
@@ -160,11 +160,6 @@ class VSSHCertAuthority:
         self.ca_guid = module.params[F_CA_GUID]  # type: str
         # SSH file attributes
         self.ca_public_key_path = module.params[F_PUBLIC_KEY_DIR]  # type: str
-
-        user = module.params[F_USER]
-        password = module.params[F_PASSWORD]
-        if user and password:
-            get_access_token(connector=self.connector, user=user, password=password, scope=SCOPE_SSH)
 
         self.changed = False
         self.ca_principals = None

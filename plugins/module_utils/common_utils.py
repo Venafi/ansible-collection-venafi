@@ -16,7 +16,7 @@
 #
 from ansible.module_utils.basic import AnsibleModule
 
-from vcert import venafi_connection, CommonConnection, IssuerHint, Authentication
+from vcert import Connection, venafi_connection, CommonConnection, IssuerHint, Authentication
 
 F_TEST_MODE = 'test_mode'
 F_URL = 'url'
@@ -84,14 +84,20 @@ def get_venafi_connection(module, platform=None):
     if user != '' or password != '':
         module.warn("user/password authentication is deprecated. Use access token instead.")
 
-    return venafi_connection(url=url,
-                             user=user,
-                             password=password,
-                             access_token=access_token,
-                             api_key=apikey,
-                             http_request_kwargs={"verify": trust_bundle} if trust_bundle else None,
-                             fake=test_mode,
-                             platform=platform)
+    # Legacy Connection. Deprecated. Do not use
+    if user and password:
+        return Connection(
+            url=url, user=user, password=password,
+            http_request_kwargs=({"verify": trust_bundle} if trust_bundle else None),
+            fake=test_mode,
+        )
+    else:
+        return venafi_connection(url=url,
+                                 access_token=access_token,
+                                 api_key=apikey,
+                                 http_request_kwargs={"verify": trust_bundle} if trust_bundle else None,
+                                 fake=test_mode,
+                                 platform=platform)
 
 
 def get_access_token(connector, user, password, scope):
