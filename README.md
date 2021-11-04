@@ -32,6 +32,8 @@ pip install ansible vcert --upgrade
 
 ## Version History
 
+#### 0.7.5
+ * Added ability to retrieve public key and default principals from SSH Certificate Authorities
 #### 0.7.4
  * Fixed issues with doc-string and custom fields description.
  * Added version history to README.md
