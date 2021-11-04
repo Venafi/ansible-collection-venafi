@@ -129,8 +129,8 @@ except ImportError:
 
 HAS_VCERT = True
 try:
-    from vcert import CommonConnection, SSHCertRequest, SSHKeyPair, SSHConfig, VenafiPlatform
-    from vcert.ssh_utils import SSHRetrieveResponse, SSHCATemplateRequest
+    from vcert import CommonConnection, SSHConfig, VenafiPlatform
+    from vcert.ssh_utils import SSHCATemplateRequest
 except ImportError:
     HAS_VCERT = False
 
