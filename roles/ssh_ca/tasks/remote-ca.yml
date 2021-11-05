@@ -1,0 +1,20 @@
+# Retrieves Certificate Authority configuration
+---
+- name: "Retrieve CA public key on remote host"
+  venafi.machine_identity.venafi_ssh_ca:
+    url: "{{ venafi.url | default(omit) }}"
+    test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
+    user: "{{ venafi.user | default(omit) }}"
+    password: "{{ venafi.password | default(omit) }}"
+    access_token: "{{ venafi.access_token | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    token: "{{ venafi.token | default(omit) }}"
+    state: "{{ ssh_ca_state | default(omit) }}"
+    force: "{{ ssh_ca_force | default(omit) }}"
+    ca_template: "{{ ssh_ca_template | default(omit) }}"
+    ca_guid: "{{ ssh_ca_guid | default(omit) }}"
+    public_key_path: "{{ ssh_ca_public_key_path | default(omit) }}"
+  register: ca_out
+- name: "dump test output"
+  debug:
+    msg: "{{ ca_out }}"

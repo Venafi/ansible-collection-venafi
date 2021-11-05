@@ -27,7 +27,7 @@ pip install ansible vcert --upgrade
 
 For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs/using/installing.html    
 
-1. Install the [Machine Indentity Collection](https://galaxy.ansible.com/venafi/ansible_role_venafi) from Ansible Galaxy:
+1. Install the [Machine Identity Collection](https://galaxy.ansible.com/venafi/machine_identity) from Ansible Galaxy:
 
    ```sh
    ansible-galaxy collection install venafi.machine_identity
@@ -77,7 +77,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
        - role: venafi.machine_identity.ssh_certificate
          ssh_key_id: "my-ssh-key-id"
          ssh_template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
-         ssh_cert_dir: "/tmp/etc/ssh/"
+         ssh_cert_dir: "/tmp/etc/ssh"
       ```
 
 5. Run the playbook.

@@ -26,7 +26,6 @@
     source_addresses: "{{ ssh_source_addresses | default(omit) }}"
     windows_cert: "{{ ssh_windows_cert | default(omit) }}"
     force: "{{ ssh_force if ssh_force is defined else false }}"
-  delegate_to: localhost
   register: certout
 - name: "dump test output"
   debug:

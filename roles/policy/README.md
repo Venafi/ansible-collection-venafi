@@ -12,7 +12,7 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 
 This role enables "Policy as Code" for [Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform)
 or [Venafi as a Service](https://vaas.venafi.com/) using [Red Hat Ansible](https://www.ansible.com/).  With it, certificate policy
-documented by specification files can by applied to Venafi to ensure compliance with enterprise standards.
+documented by specification files can be applied to Venafi to ensure compliance with enterprise standards.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ pip install ansible vcert --upgrade
 
 For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs/using/installing.html    
 
-1. Install the [Machine Indentity Collection](https://galaxy.ansible.com/venafi/ansible_role_venafi) from Ansible Galaxy:
+1. Install the [Machine Identity Collection](https://galaxy.ansible.com/venafi/machine_identity) from Ansible Galaxy:
 
    ```sh
    ansible-galaxy collection install venafi.machine_identity

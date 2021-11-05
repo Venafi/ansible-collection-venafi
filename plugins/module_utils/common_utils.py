@@ -16,7 +16,19 @@
 #
 from ansible.module_utils.basic import AnsibleModule
 
-from vcert import Connection, venafi_connection, CommonConnection, IssuerHint
+from vcert import Connection, venafi_connection, CommonConnection, IssuerHint, Authentication
+
+F_TEST_MODE = 'test_mode'
+F_URL = 'url'
+F_USER = 'user'
+F_PASSWORD = 'password'
+F_APIKEY = 'token'
+F_ACCESS_TOKEN = 'access_token'
+F_TRUST_BUNDLE = 'trust_bundle'
+F_STATE = 'state'
+F_FORCE = 'force'
+F_STATE_PRESENT = 'present'
+F_STATE_ABSENT = 'absent'
 
 DEFAULT = 'DEFAULT'
 DIGICERT = 'DIGICERT'
@@ -47,25 +59,17 @@ def module_common_argument_spec():
     :return: dict
     """
     options = dict(
-        state=dict(type='str', choices=['present', 'absent'], default='present'),
+        state=dict(type='str', choices=[F_STATE_PRESENT, F_STATE_ABSENT], default=F_STATE_PRESENT),
         force=dict(type='bool', default=False),
     )
     return options
 
 
-F_TEST_MODE = 'test_mode'
-F_URL = 'url'
-F_USER = 'user'
-F_PASSWORD = 'password'
-F_APIKEY = 'token'
-F_ACCESS_TOKEN = 'access_token'
-F_TRUST_BUNDLE = 'trust_bundle'
-
-
-def get_venafi_connection(module):
+def get_venafi_connection(module, platform=None):
     """
 
     :param AnsibleModule module:
+    :param VenafiPlatform platform:
     :return: a connection to an instance of a Venafi platform
     :rtype: CommonConnection
     """
@@ -84,19 +88,30 @@ def get_venafi_connection(module):
     if user and password:
         return Connection(
             url=url, user=user, password=password,
-            http_request_kwargs=(
-                {"verify": trust_bundle} if trust_bundle else None
-            ),
+            http_request_kwargs=({"verify": trust_bundle} if trust_bundle else None),
             fake=test_mode,
         )
     else:
-        return venafi_connection(
-            url=url, access_token=access_token, api_key=apikey,
-            http_request_kwargs=(
-                {"verify": trust_bundle} if trust_bundle else None
-            ),
-            fake=test_mode
-        )
+        return venafi_connection(url=url,
+                                 access_token=access_token,
+                                 api_key=apikey,
+                                 http_request_kwargs={"verify": trust_bundle} if trust_bundle else None,
+                                 fake=test_mode,
+                                 platform=platform)
+
+
+def get_access_token(connector, user, password, scope):
+    """
+    Requests an access token from the connector with the given scope
+
+    :param CommonConnection connector:
+    :param str user:
+    :param str password:
+    :param str scope:
+    :rtype: None
+    """
+    auth = Authentication(user=user, password=password, scope=scope)
+    connector.get_access_token(auth)
 
 
 def get_issuer_hint(hint):

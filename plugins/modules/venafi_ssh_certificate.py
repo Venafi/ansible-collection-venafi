@@ -496,7 +496,7 @@ def main():
         object_name=dict(type='str', required=False),
         destination_addresses=dict(type='list', elements='str', required=False),
         principals=dict(type='list', elements='str', required=False),
-        extensions=dict(type='list', elements='str', required=False),
+        extensions=dict(type='dict', required=False),
         force_command=dict(type='str', required=False),
         source_addresses=dict(type='list', elements='str', required=False),
         windows_cert=dict(type='bool', default=False, required=False)
