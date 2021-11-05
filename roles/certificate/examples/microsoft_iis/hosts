@@ -1,0 +1,11 @@
+[win]
+my-windows-server.example.com
+
+[win:vars]
+ansible_user=yourUser
+ansible_password=yourPassword
+ansible_connection=winrm
+ansible_winrm_transport=ntlm
+ansible_winrm_scheme=https
+ansible_winrm_server_cert_validation=validate
+ansible_winrm_ca_trust_path=/path/to/your/CA/rootCA.pem

@@ -1,0 +1,68 @@
+- name: Remove cert
+  hosts: all
+
+  vars_files:
+    - variables.yaml
+
+  tasks:
+    - set_fact: iis_ssl_flags=1 
+      when: iis_sni is defined and iis_sni == true
+
+    - set_fact: iis_ssl_flags=0 
+      when: iis_sni is defined and iis_sni == false
+
+    - name: Setting up a default site name if is not defined
+      set_fact: iis_site_name="Default Web Site"
+      when: iis_site_name is not defined
+
+    - set_fact: iis_p12_pass="v3N4f1!"
+      when: iis_p12_pass is not defined
+
+    - name: Delete a HTTPS binding
+      when: iis_sni is defined and inventory_hostname in groups['win']
+      win_iis_webbinding:
+        name: "{{ iis_site_name }}"
+        protocol: https
+        port: "{{ iis_bind_port }}"
+        host_header: "{{ cert_name }}"
+        ssl_flags: "{{ iis_ssl_flags }}"
+        ip: "{{ iis_bind_ip }}"
+        state: absent
+
+    - name: Delete HTTPS binding
+      when: iis_sni is not defined and inventory_hostname in groups['win']
+      win_iis_webbinding:
+        name: "{{ iis_site_name }}"
+        protocol: https
+        port: "{{ iis_bind_port }}"
+        ip: "{{ iis_bind_ip }}"
+        state: absent
+
+    - name: Remove certificate based on file thumbprint
+      when: inventory_hostname in groups['win']
+      win_certificate_store:
+        path: '{{ ansible_env.USERPROFILE }}\{{ cert_name }}.p12'
+        file_type: pkcs12
+        password: "{{ iis_p12_pass }}"
+        store_location: LocalMachine
+        key_storage: machine
+        state: absent
+
+    - name: Delete Cert files
+      when: inventory_hostname in groups['win']
+      win_file:
+        path: '{{ ansible_env.USERPROFILE }}\{{ cert_name}}.p12'
+        state: absent
+
+    - name: Delete local files
+      local_action: file path="/tmp/{{ item  }}" state=absent
+      with_items:
+          - "{{ cert_name }}.pem"
+          - "{{ cert_name }}.chain.pem"
+      run_once: True
+
+    - name: Delete local cert path
+      local_action: 
+        module: file
+        path: "{{ cert_path  }}"
+        state: absent
