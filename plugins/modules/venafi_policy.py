@@ -155,14 +155,15 @@ class VPolicyManagement:
             if remote_ps:
                 # Policy already exists in Venafi platform
                 # Validate that both, the source policy and the Venafi platform policy have the same content
-                local_ps = self._read_policy_spec_file(self.local_ps)
-                changed, new_msgs = check_policy_specification(local_ps, remote_ps)
+                # local_ps = self._read_policy_spec_file(self.local_ps)
+                # changed, new_msgs = check_policy_specification(local_ps, remote_ps)
+                changed = True
                 if changed:
                     result[F_CHANGED] = True
                     result[F_POLICY_UPDATED] = self.zone
-                    msgs.extend(new_msgs)
-                    msgs.append('Changes detected in local file %s against remote policy %s.'
-                                % (self.local_ps, self.zone))
+                    # msgs.extend(new_msgs)
+                    msgs.append('Policy %s found on Venafi platform. Overriding with values from %s'
+                                % (self.zone, self.local_ps))
                 else:
                     msgs.append('No changes detected in local file %s. No action required' % self.local_ps)
             else:
@@ -284,7 +285,7 @@ def main():
         # TODO create delete_policy() method. Not yet available on vcert python library
         vcert.delete_policy()
 
-    vcert.validate()
+    # vcert.validate()
     module.exit_json(**check_result)
 
 
