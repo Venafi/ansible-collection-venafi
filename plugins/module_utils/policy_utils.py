@@ -280,6 +280,10 @@ def _check_list(remote_values, local_values):
     :param list local_values: The member values
     :rtype: bool
     """
+    if remote_values is None:
+        remote_values = []
+    if local_values is None:
+        local_values = []
     if len(remote_values) == len(local_values):
         return all(x in local_values for x in remote_values)
     else:

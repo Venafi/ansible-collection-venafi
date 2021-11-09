@@ -88,7 +88,7 @@ except ImportError:
 
 HAS_VCERT = True
 try:
-    from vcert.errors import VenafiConnectionError
+    from vcert.errors import VenafiError
     from vcert.parser import json_parser, yaml_parser
     from vcert.policy import PolicySpecification
 except ImportError:
@@ -146,7 +146,7 @@ class VPolicyManagement:
         msgs = []
         try:
             remote_ps = self.connection.get_policy(self.zone)
-        except VenafiConnectionError as e:
+        except VenafiError as e:
             self.module.debug('Get policy %s failed. Assuming Policy does not exist. Error: %s'
                               % (self.zone, to_native(e)))
             remote_ps = None

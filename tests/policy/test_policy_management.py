@@ -21,7 +21,8 @@ from pprint import pprint
 from vcert.parser import json_parser
 
 from plugins.modules.venafi_policy import VPolicyManagement
-from test_utils import FakeModule, FAKE, TPP_ACCESS_TOKEN, TPP_TOKEN_URL, CLOUD_URL, CLOUD_APIKEY, CLOUD_ZONE
+from test_utils import FakeModule, FAKE, TPP_ACCESS_TOKEN, TPP_TOKEN_URL, CLOUD_URL, CLOUD_APIKEY, CLOUD_ZONE, \
+    TPP_TRUST_BUNDLE, TPP_ZONE
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SOURCE_PATH = '/tmp/ps_source.json'
@@ -31,9 +32,14 @@ class TestPolicyManagementTPP(unittest.TestCase):
     def test_get_policy(self):
         params = self.get_params()
         params['policy_spec_output_path'] = CURRENT_DIR + '/assets/ps_output_tpp.json'
+        params['zone'] = TPP_ZONE
         module = FakeModule(params)
         vcert = VPolicyManagement(module)
-        resp = vcert.get_policy()
+        vcert.validate_local_path()
+        check_result = vcert.check()
+        vcert.set_policy()
+        vcert.validate()
+        vcert.module.exit_json(**check_result)
         print('Get Policy Finished')
 
     @staticmethod
@@ -72,13 +78,15 @@ def get_params(platform):
         'token': '',
         'trust_bundle': '',
         'zone': '',
-        'policy_spec_source_path': '',
-        'policy_spec_output_path': ''
+        'policy_spec_path': SOURCE_PATH,
+        'policy_spec_output_path': '',
+        'state': 'present',
+        'force': False
     }
     if platform == PLATFORM_TPP:
         params['url'] = TPP_TOKEN_URL
         params['access_token'] = TPP_ACCESS_TOKEN
-        params['trust_bundle'] = ''
+        params['trust_bundle'] = TPP_TRUST_BUNDLE
     elif platform == PLATFORM_VAAS:
         params['url'] = CLOUD_URL
         params['token'] = CLOUD_APIKEY
