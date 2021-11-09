@@ -299,6 +299,9 @@ def _check_value(remote_value, local_value):
     :return: True if both parameters hold the same value, False otherwise
     :rtype: bool
     """
+    if isinstance(remote_value, bool) or isinstance(local_value, bool):
+        remote_value = False if remote_value is None else remote_value
+        local_value = False if local_value is None else local_value
     if remote_value is not None and local_value is not None:
         return True if remote_value == local_value else False
     elif remote_value is None and local_value is None:
