@@ -15,6 +15,10 @@
     ca_guid: "{{ ssh_ca_guid | default(omit) }}"
     public_key_path: "{{ ssh_ca_public_key_path | default(omit) }}"
   register: ca_out
+
 - name: "dump test output"
   debug:
     msg: "{{ ca_out }}"
+
+- set_fact:
+    ssh_ca_principals_fact: "{{ ca_out.ssh_ca_principals | trim }}"
