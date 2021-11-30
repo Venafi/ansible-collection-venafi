@@ -14,8 +14,6 @@ This collection, called `machine_identity`, uses [Venafi Trust Protection Platfo
 
 If you like this collection, please give us a rating on [Ansible Galaxy](https://galaxy.ansible.com/venafi/machine_identity).
 
-<!-- DW: what's a collection? Is that different than a solution, the term we used with Terraform? -->
-
 ## Requirements
 
 Review the [Venafi](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
@@ -23,7 +21,7 @@ prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi
 ```sh
 pip install ansible vcert --upgrade
 ```
-<!-- DW: so requirements are the same for both tpp and vaas? If so, would be helpful to say that here to avoid confusion -->
+<!-- TODO: clarify the different requirements for TPP and VaaS -->
 
 ## Collection Contents
 
@@ -31,8 +29,6 @@ pip install ansible vcert --upgrade
 
 - [`venafi.machine_identity.certificate`](roles/certificate/README.md): Enrolls a certificate and optionally deploys it to a remote location.
 - [`venafi.machine_identity.policy`](roles/policy/README.md): Creates or updates certificate policy on VaaS or TPP using a specification file.
-
-<!-- DW: So this readme is not parallell to the other readmes, which breaks the content model and makes it more difficult for customers to get used to know where and how to find information. For example, where's the "Test driver our examples" section, or the Setup section? How do i know what to do next to get started? What steps do I need to take following meeting the requirements? -->
 
 ## Version History
 
