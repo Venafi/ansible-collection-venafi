@@ -1,0 +1,92 @@
+- name: Generate and Install cert
+  hosts: all
+  collections: venafi.machine_identity
+
+  vars_files:
+    - variables.yaml
+
+  tasks:
+    - set_fact: iis_ssl_flags=1 
+      when: iis_sni is defined and iis_sni == true
+
+    - set_fact: iis_ssl_flags=0 
+      when: iis_sni is defined and iis_sni == false
+
+    - set_fact: iis_site_name="Default Web Site"
+      when: iis_site_name is not defined
+
+    - set_fact: iis_p12_pass="v3N4f1!"
+      when: iis_p12_pass is not defined
+
+    - name: Calling Venafi Certificate role
+      include_role:
+        name: certificate
+        apply:
+          delegate_to: localhost
+      vars:
+        certificate_common_name: "{{ cert_name }}"
+        certificate_alt_name: "DNS:{{ cert_name }}"
+        certificate_copy_private_key_to_remote: false
+        certificate_privatekey_type: "RSA"
+        certificate_privatekey_size: "2048"
+        certificate_chain_option: "last"
+        certificate_cert_dir: "{{ cert_path }}/{{ cert_name }}"
+        certificate_remote_execution: false
+        certificate_remote_cert_path: "/tmp/{{ cert_name }}.pem"
+        certificate_remote_privatekey_path: "/tmp/{{ cert_name }}.key"
+        certificate_remote_chain_path: "/tmp/{{ cert_name }}.chain.pem"
+
+    - name: Generate PKCS#12 file
+      openssl_pkcs12:
+        action: export
+        path: "{{ cert_path }}/{{ cert_name }}/{{ cert_name }}.p12"
+        friendly_name: "{{ cert_name }}"
+        privatekey_path: "{{ cert_path }}/{{ cert_name }}/{{ cert_name }}.key"
+        passphrase: "{{ iis_p12_pass }}"
+        certificate_path: "/tmp/{{ cert_name }}.pem"
+        other_certificates_parse_all: true
+        other_certificates: "/tmp/{{ cert_name }}.chain.pem"
+        state: present
+      delegate_to: localhost
+
+    - name: Copy Cert files
+      when: inventory_hostname in groups['win']
+      win_copy:
+        src: "{{ cert_path }}/{{ cert_name }}/{{ cert_name }}.p12"
+        dest: "{{ ansible_env.USERPROFILE }}"
+
+    - name: Import PKCS#12 to certificate Store
+      when: inventory_hostname in groups['win']
+      win_certificate_store:
+        path: '{{ ansible_env.USERPROFILE }}\{{ cert_name }}.p12'
+        file_type: pkcs12
+        password: "{{ iis_p12_pass }}"
+        store_location: LocalMachine
+        key_storage: machine
+        state: present
+      become: yes
+      become_method: runas
+      become_user: SYSTEM 
+      register: result
+     
+    - name: Add a HTTPS binding SNI
+      when: iis_sni is defined and inventory_hostname in groups['win']
+      win_iis_webbinding:
+        name: "{{ iis_site_name }}"
+        protocol: https
+        port: "{{ iis_bind_port }}"
+        host_header: "{{ cert_name }}"
+        ssl_flags: "{{ iis_ssl_flags }}"
+        ip: "{{ iis_bind_ip }}"
+        certificate_hash: "{{ result.thumbprints[-1] }}"
+        state: present
+
+    - name: Add a HTTPS binding
+      when: iis_sni is not defined and inventory_hostname in groups['win']
+      win_iis_webbinding:
+        name: "{{ iis_site_name }}"
+        protocol: https
+        port: "{{ iis_bind_port }}"
+        ip: "{{ iis_bind_ip }}"
+        certificate_hash: "{{ result.thumbprints[-1] }}"
+        state: present

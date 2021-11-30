@@ -1,0 +1,12 @@
+my_site:
+  name: "demo-iis"
+  domain: "venafi.example"
+
+iis_site_name: "Default Web Site"
+iis_bind_ip: 192.168.2.162
+iis_bind_port: 443
+iis_sni: true
+iis_p12_pass: "v3Naf1!"
+
+cert_path: "/tmp/etc/ssl"
+cert_name: "{{ my_site.name }}.{{ my_site.domain }}"
