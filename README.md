@@ -32,13 +32,15 @@ pip install ansible vcert --upgrade
 
 ## Version History
 
+#### 0.8.0
+ * Added support for service generated CSR on VaaS
 #### 0.7.5
  * Added ability to retrieve public key and default principals from SSH Certificate Authorities
 #### 0.7.4
  * Fixed issues with doc-string and custom fields description.
  * Added version history to README.md
 #### 0.7.3
- * Added support for Service Generated CSR (contribution by @Kerrida)
+ * Added support for Service Generated CSR (contribution by @Kerrida) on TPP
  * Added support for PKCS12 output format for certificates. 
  * Added support for flexible validity periods when requesting a certificate. 
  * Added support for custom fields when requesting a certificate.
