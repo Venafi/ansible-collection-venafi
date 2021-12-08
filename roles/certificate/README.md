@@ -126,17 +126,17 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_chain_path`                 | Local directory where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
    | `certificate_common_name`                | *Common Name* to request for the certificate.<br/>Default: `"{{ ansible_fqdn }}"` |
    | `certificate_copy_private_key_to_remote` | Specifies whether to copy the private key file to the remote host<br/>Default: `true` |
-   | `certificate_csr_origin`                 | Specifies the source of the CSR used to request a certificate. Options:<br/>local - Generate CSR locally, provided - CSR is provided, or Service - Venafi generates CSR<br/>Default: `"local"` |
+   | `certificate_csr_origin`                 | Specifies the source of the CSR used to request a certificate. <br/>Default: `"local"` <br/>Options: `"local"` - Generates CSR locally, `"provided"` - CSR is provided, or `"service"` - Venafi generates CSR |
    | `certificate_csr_path`                   | Local directory where certificate signing request files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"` |
    | `certificate_custom_fields`              | Map of custom-defined attributes for the certificate, declared as key-value format. Example: <pre lang="yaml">certificate_custom_fields:<br/>  custom: asd<br/>  cfList: item3<br/>  cfListMulti: [tier1, tier4]</pre> |
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
-   | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
+   | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Options: `"DEFAULT"`, `"DIGICERT"`, `"ENTRUST"`, or `"MICROSOFT"` |
    | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |
    | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |
    | `certificate_privatekey_path`            | Local directory where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
-   | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) |
-   | `certificate_privatekey_type`            | Key algorithm, "RSA" or "ECDSA"<br/>Default: `"RSA"` (from VCert) |
+   | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) <br/>Options: `"1024"`, `"2048"` or `"4094"`|
+   | `certificate_privatekey_type`            | Key algorithm <br/>Default: `"RSA"` (from VCert) <br/>Options: `"RSA"` or `"ECDSA"`|
    | `certificate_remote_cert_path`           | Directory on remote host where certificate files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
    | `certificate_remote_chain_path`          | Directory on remote host where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
    | `certificate_remote_execution`           | Specifies whether cryptographic assets will be generated remotely, or locally and then provisioned to the remote host<br/>Default: `false` | 
