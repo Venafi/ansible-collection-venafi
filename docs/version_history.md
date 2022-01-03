@@ -10,11 +10,10 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 # Venafi Collection for Ansible
 ## Version History
 
-#### 0.8.1
-* Fixed issue with SANs validation when no SAN has been provided
-* Fixed issue when an empty private key file was being created on invalid scenarios
 #### 0.8.0
- * Added support for service generated CSR on VaaS.
+ * Added support for service generated CSR on VaaS. 
+ * Fixed issue with SANs validation when no SAN has been provided
+ * Fixed issue when an empty private key file was being created on invalid scenarios
 #### 0.7.5
  * Added ability to retrieve public key and default principals from SSH Certificate Authorities
 #### 0.7.4
