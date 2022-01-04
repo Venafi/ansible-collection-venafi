@@ -444,11 +444,12 @@ class VCertificate:
         zone_config = self.connection.read_zone_conf(self.zone)
         request.update_from_zone_config(zone_config)
 
-        serialize_private_key = True
+        serialize_private_key = False
         if self.csr_origin == CSR_ORIGIN_SERVICE:
             if request.key_password is None:
                 self.module.fail_json(msg="Missing parameter for Service Generated CSR: %s" % F_PK_PASSPHRASE)
             request.include_private_key = True
+            serialize_private_key = True
 
         elif self.csr_origin == CSR_ORIGIN_PROVIDED:
             if not self.csr_path:
@@ -463,7 +464,6 @@ class VCertificate:
             if self._check_private_key_correct() and not self.privatekey_reuse:
                 private_key = to_text(open(self.privatekey_filename, "rb").read())
                 request.private_key = private_key
-                serialize_private_key = False
             elif self.privatekey_type:
                 key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
                 if not key_type:
@@ -476,6 +476,7 @@ class VCertificate:
                 else:
                     self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
                                                % self.privatekey_type))
+                serialize_private_key = True
         else:
             self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
 
@@ -502,7 +503,7 @@ class VCertificate:
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
 
-        if serialize_private_key:
+        if serialize_private_key and cert.key is not None:
             self._atomic_write(self.privatekey_filename, cert.key)
 
     def _get_pkcs12_cert_path(self):
@@ -598,23 +599,24 @@ class VCertificate:
             return False
         ips = []
         dns = []
-        alternative_names = cert.extensions.get_extension_for_oid(
-            ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
-        for e in alternative_names:
+        alt_names = []
+        if cert.extensions:
+            ext = cert.extensions
+            if ext.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME):
+                alt_names = ext.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
+        for e in alt_names:
             if isinstance(e, x509.general_name.DNSName):
                 dns.append(e.value)
             elif isinstance(e, x509.general_name.IPAddress):
                 ips.append(e.value.exploded)
         if self.ip_addresses and sorted(self.ip_addresses) != sorted(ips):
-            self.changed_message.append("IP address in request: %s and in"
-                                        "certificate: %s are different"
+            self.changed_message.append("IP address in request: %s and in certificate: %s are different"
                                         % (sorted(self.ip_addresses), ips))
             self.changed_message.append("CN is %s" % cn)
             return False
         if self.san_dns and not self._check_dns_sans_correct(
                 dns, self.san_dns, [self.common_name]):
-            self.changed_message.append("DNS addresses in request: %s and in "
-                                        "certificate: %s are different"
+            self.changed_message.append("DNS addresses in request: %s and in certificate: %s are different"
                                         % (sorted(self.san_dns), sorted(dns)))
             return False
         return True
