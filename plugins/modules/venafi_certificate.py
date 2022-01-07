@@ -602,8 +602,12 @@ class VCertificate:
         alt_names = []
         if cert.extensions:
             ext = cert.extensions
-            if ext.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME):
+            try:
                 alt_names = ext.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
+            except x509.extensions.ExtensionNotFound as enf:
+                # If the OID is not found, the x509 object raises an error we need to catch.
+                alt_names = []
+
         for e in alt_names:
             if isinstance(e, x509.general_name.DNSName):
                 dns.append(e.value)
