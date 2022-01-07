@@ -370,6 +370,7 @@ class VCertificate:
             module.fail_json(msg="%s should be set if %s configured" % (F_PK_TYPE, F_PK_CURVE))
         if self.privatekey_size and not self.privatekey_type:
             module.fail_json(msg="%s should be set if %s configured" % (F_PK_TYPE, F_PK_SIZE))
+        self.serialize_private_key = False
 
         self.ip_addresses = []
         self.email_addresses = []
@@ -444,12 +445,11 @@ class VCertificate:
         zone_config = self.connection.read_zone_conf(self.zone)
         request.update_from_zone_config(zone_config)
 
-        serialize_private_key = False
         if self.csr_origin == CSR_ORIGIN_SERVICE:
             if request.key_password is None:
                 self.module.fail_json(msg="Missing parameter for Service Generated CSR: %s" % F_PK_PASSPHRASE)
             request.include_private_key = True
-            serialize_private_key = True
+            self.serialize_private_key = True
 
         elif self.csr_origin == CSR_ORIGIN_PROVIDED:
             if not self.csr_path:
@@ -476,7 +476,7 @@ class VCertificate:
                 else:
                     self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
                                                % self.privatekey_type))
-                serialize_private_key = True
+                self.serialize_private_key = True
         else:
             self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
 
@@ -503,7 +503,7 @@ class VCertificate:
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
 
-        if serialize_private_key and cert.key is not None:
+        if self.serialize_private_key and cert.key is not None:
             self._atomic_write(self.privatekey_filename, cert.key)
 
     def _get_pkcs12_cert_path(self):
@@ -629,7 +629,7 @@ class VCertificate:
         if not self.privatekey_filename:
             return True
         if not os.path.exists(self.privatekey_filename):
-            return False
+            return False if self.serialize_private_key else True
         try:
             with open(self.privatekey_filename, 'rb') as key_data:
                 password = self.privatekey_passphrase.encode() if \
