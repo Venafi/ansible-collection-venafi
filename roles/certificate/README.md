@@ -135,7 +135,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |
    | `certificate_privatekey_path`            | Local directory where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
-   | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) <br/>Options: `"1024"`, `"2048"` or `"4094"`|
+   | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) <br/>Options: `"1024"`, `"2048"` or `"4096"`|
    | `certificate_privatekey_type`            | Key algorithm <br/>Default: `"RSA"` (from VCert) <br/>Options: `"RSA"` or `"ECDSA"`|
    | `certificate_remote_cert_path`           | Directory on remote host where certificate files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"` |
    | `certificate_remote_chain_path`          | Directory on remote host where certificate chain files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"` |
