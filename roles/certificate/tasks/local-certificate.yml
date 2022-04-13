@@ -33,7 +33,7 @@
     alt_name: "{{ certificate_alt_name | default([]) }}"
     before_expired_hours: "{{ certificate_before_expired_hours if certificate_before_expired_hours is defined else 72 }}"
     force: "{{ certificate_force if certificate_force is defined else false }}"
-    use_pkcs12_format: "{{ certificate_pkcs12_format | default(omit) }}"
+    use_pkcs12_format: "{{ certificate_pkcs12_format if certificate_pkcs12_format is defined else false }}"
     validity_hours: "{{ certificate_validity_hours | default(omit) }}"
     issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
     custom_fields: "{{ certificate_custom_fields | default(omit) }}"
@@ -48,14 +48,14 @@
     src: "{{ certificate_cert_path }}"
     dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
     mode: 0644
-  when: certificate_pkcs12_format is false
+  when: not certificate_pkcs12_format
 
 - name: "Copy Venafi PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12  is defined else certificate_cert_path_pkcs12 }}"
   copy:
     src: "{{ certificate_cert_path_pkcs12 }}"
     dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12  is defined else certificate_cert_path_pkcs12 }}"
     mode: 0644
-  when: certificate_pkcs12_format is true
+  when: certificate_pkcs12_format
 
 - name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
   copy:
@@ -69,4 +69,4 @@
     src: "{{ certificate_chain_path }}"
     dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
     mode: 0644
-  when: certificate_chain_path is defined and certificate_pkcs12_format is false
+  when: certificate_chain_path is defined and not certificate_pkcs12_format

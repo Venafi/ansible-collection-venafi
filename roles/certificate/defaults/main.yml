@@ -11,6 +11,8 @@ certificate_cert_path_pkcs12: "{{ certificate_cert_dir }}/{{ certificate_common_
 certificate_chain_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.chain.pem"
 certificate_privatekey_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"
 certificate_csr_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.csr"
+# Set to true, if you want to use PKCS#12 format instead of PEM
+certificate_pkcs12_format: false
 
 # Where to execute venafi_certificate module. If set to false, certificate will be
 # created on ansible master host and then copied to the remote server
