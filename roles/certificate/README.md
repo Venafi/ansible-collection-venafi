@@ -132,7 +132,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_force`                      | Specifies whether to request a new certificate every time the playbook is run<br/>Default: `false` |
    | `certificate_issuer_hint`                | Issuer of the certificate. Ignored when platform is not TPP.<br/>Use in combination with `validity_hours` to specify the validity period of a certificate on TPP.<br/>Default: `"DEFAULT"`<br/>Choices: `"DEFAULT"` `"DIGICERT"` `"ENTRUST"` `"MICROSOFT"` |
    | `certificate_pkcs12_format`              | Use PKCS12 format to serialize the certificate.<br/>Default: `false` |
-   | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P251"` (from VCert) | 
+   | `certificate_privatekey_curve`           | Elliptic Curve for ECDSA keys<br/>Default: `"P256"` (from VCert) | 
    | `certificate_privatekey_passphrase`      | Password to use for encrypting the private key |
    | `certificate_privatekey_path`            | Local directory where private key files will be stored<br/>Default: `"{{ certificate_cert_dir }}/{{ certificate_common_name }}.key"` |
    | `certificate_privatekey_size`            | Key size in bits for RSA keys<br/>Default: `"2048"` (from VCert) |
