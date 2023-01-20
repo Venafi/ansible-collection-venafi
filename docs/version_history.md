@@ -2,6 +2,8 @@
 
 ## Version History
 
+#### 0.8.1
+ * Fixed an issue in `local-certificate.yaml` task where certain expressions failed when `use_pkcs12_format` var is not defined
 #### 0.8.0
  * Added support for service generated CSR on VaaS
  * Fixed issue with SANs validation when no SAN has been provided
