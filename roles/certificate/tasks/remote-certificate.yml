@@ -26,7 +26,8 @@
     validity_hours: "{{ certificate_validity_hours | default(omit) }}"
     issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
     custom_fields: "{{ certificate_custom_fields | default(omit) }}"
-  register: certout
-- name: "dump test output"
-  debug:
-    msg: "{{ certout }}"
+  register: certificate_output
+
+- name: "Dump test output"
+  ansible.builtin.debug:
+    msg: "{{ certificate_output }}"

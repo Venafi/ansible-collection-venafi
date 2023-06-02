@@ -1,15 +1,17 @@
 ---
-- name: "Include vars of {{ credentials_file }} into the venafi variable."
-  include_vars:
+- name: "Include vars into the venafi variable from {{ credentials_file }}"
+  ansible.builtin.include_vars:
     file: "{{ credentials_file }}"
     name: venafi
 
-- name: "show execution mode"
-  debug:
+- name: "Show execution mode"
+  ansible.builtin.debug:
     msg: "ssh_remote_execution is {{ ssh_remote_execution }}"
 
-- import_tasks: local-certificate.yml
+- name: "Local SSH Certificate"
+  ansible.builtin.import_tasks: local-certificate.yml
   when: not ssh_remote_execution
 
-- import_tasks: remote-certificate.yml
+- name: "Remote SSH Certificate"
+  ansible.builtin.import_tasks: remote-certificate.yml
   when: ssh_remote_execution

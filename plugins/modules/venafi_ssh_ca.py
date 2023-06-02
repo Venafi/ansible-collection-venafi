@@ -26,7 +26,7 @@ description:
 version_added: "0.7.5"
 author: Russel Vela (@rvelaVenafi)
 options:
-    ca_template:        
+    ca_template:
         description:
             - The name of the Certificate Authority from whom the public key and principals is retrieved.
             - Either this option or I(ca_guid) must be provided to the module.
@@ -60,7 +60,7 @@ EXAMPLES = """
 - name: "dump output"
   debug:
     msg: "{{ ca_out }}"
-    
+
 # Retrieve CA public key data and principals using user/password
 ---
 - name: "retrieve_ssh_ca_public_key_and_principals"
@@ -74,7 +74,7 @@ EXAMPLES = """
 - name: "dump output"
   debug:
     msg: "{{ ca_out }}"
-    
+
 # Retrieve CA public key data and principals using access token
 ---
 - name: "retrieve_ssh_ca_public_key_and_principals"
@@ -101,7 +101,7 @@ ssh_ca_public_key:
     returned: when I(state) is C(present)
     type: str
     sample: "ssh-rsa AAAAB3NzaC1yc2E...ZZOQ== my-cit-name-here"
- 
+
 ssh_ca_principals:
     description: Default principals of the given Certificate Authority.
     returned: when I(state) is C(present) and Venafi credentials are provided to the module
