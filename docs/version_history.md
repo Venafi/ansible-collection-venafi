@@ -2,6 +2,10 @@
 
 ## Version History
 
+#### 0.9.0
+ * Updated vcert dependencies to patch security vulnerabilities
+ * Fixed all linter errors reported by ansible-lint
+ * Added role-specific targets to Makefile
 #### 0.8.1
  * Fixed an issue in `local-certificate.yaml` task where certain expressions failed when `use_pkcs12_format` var is not defined
 #### 0.8.0

@@ -1,6 +1,6 @@
 ---
-- name: "Include vars of {{ credentials_file }} into the venafi variable."
-  include_vars:
+- name: "Include vars into the venafi variable from {{ credentials_file }}"
+  ansible.builtin.include_vars:
     file: "{{ credentials_file }}"
     name: venafi
 
@@ -21,5 +21,5 @@
   run_once: "{{ set_policy_run_once }}"
   register: policy_spec
 - name: "Dump newly created policy specification"
-  debug:
+  ansible.builtin.debug:
     msg: "{{ policy_spec }}"

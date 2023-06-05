@@ -20,7 +20,7 @@ DOCUMENTATION = '''
 module: venafi_policy
 short_description: Creates or deletes policies on Venafi platforms
 description:
-    - This is the Venafi policy management module for working with Venafi as a Service and Venafi Trusted Protection Platform.
+    - Venafi policy management module for working with Venafi as a Service and Venafi Trust Protection Platform.
     - It allows to create a policy at I(zone) on the Venafi platform from a file defined by I(policy_spec_path).
     - As of now, policy's delete operation is not supported.
 version_added: "0.6.0"

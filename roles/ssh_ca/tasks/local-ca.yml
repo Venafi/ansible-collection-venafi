@@ -2,7 +2,7 @@
 # Copy CA public key to remote host from inventory
 ---
 - name: "Create directory {{ ssh_ca_dir }}"
-  file:
+  ansible.builtin.file:
     path: "{{ ssh_ca_dir }}"
     state: directory
     mode: 0755
@@ -15,7 +15,7 @@
     user: "{{ venafi.user | default(omit) }}"
     password: "{{ venafi.password | default(omit) }}"
     access_token: "{{ venafi.access_token | default(omit) }}"
-    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
     token: "{{ venafi.token | default(omit) }}"
     state: "{{ ssh_ca_state | default(omit) }}"
     force: "{{ ssh_ca_force | default(omit) }}"
@@ -23,23 +23,24 @@
     ca_guid: "{{ ssh_ca_guid | default(omit) }}"
     public_key_path: "{{ ssh_ca_public_key_path | default(omit) }}"
   delegate_to: localhost
-  register: ca_out
+  register: ssh_ca_output
 
-- name: "dump test output"
-  debug:
-    msg: "{{ ca_out }}"
+- name: "Dump test output"
+  ansible.builtin.debug:
+    msg: "{{ ssh_ca_output }}"
 
-- set_fact:
-    ssh_ca_principals_fact: "{{ ca_out.ssh_ca_principals | trim }}"
+- name: "Set fact"
+  ansible.builtin.set_fact:
+    ssh_ca_principals_fact: "{{ ssh_ca_output.ssh_ca_principals | trim }}"
 
 - name: "Check CA public key file exists"
-  stat:
+  ansible.builtin.stat:
     path: "{{ ssh_ca_public_key_path }}"
-  register: ca_pub_key
+  register: ssh_ca_pub_key
 
 - name: "Copy CA public key file to remote location {{ ssh_ca_remote_public_key_path if ssh_ca_remote_public_key_path else ssh_ca_public_key_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssh_ca_public_key_path }}"
     dest: "{{ ssh_ca_remote_public_key_path if ssh_ca_remote_public_key_path else ssh_ca_public_key_path }}"
     mode: 0644
-  when: ca_pub_key.stat.exists
+  when: ssh_ca_pub_key.stat.exists
