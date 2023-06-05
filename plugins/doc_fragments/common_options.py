@@ -20,7 +20,7 @@ class ModuleDocFragment(object):
 options:
     state:
         description:
-            - Whether the resource should be created or deleted, taking action if the state is different from what is stated.
+            - Creates or deletes the resource, taking action if the resource's state is different from what is stated.
         default: present
         choices:
             - present

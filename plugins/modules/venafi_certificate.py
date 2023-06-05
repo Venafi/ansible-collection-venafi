@@ -19,9 +19,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 DOCUMENTATION = '''
 ---
 module: venafi_certificate
-short_description: This is the Venafi certificate module for working with Venafi as a Service (VaaS) or Venafi Trusted Protection Platform (TPP)
+short_description: Venafi certificate module for working with Venafi as a Service or Venafi Trust Protection Platform
 description:
-    - This is Venafi certificate module for working with Venafi as a Service (VaaS) or Trust Protection Platform (TPP).
+    - Venafi certificate module for working with Venafi as a Service (VaaS) or Trust Protection Platform (TPP).
 version_added: "0.6.0"
 author: Alexander Rykalin (@arykalin)
 options:

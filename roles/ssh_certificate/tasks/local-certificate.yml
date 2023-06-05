@@ -3,7 +3,7 @@
 # Generates certificates on remote host
 ---
 - name: "Create directory {{ ssh_cert_dir }}"
-  file:
+  ansible.builtin.file:
     path: "{{ ssh_cert_dir }}"
     state: directory
     mode: 0755
@@ -16,7 +16,7 @@
     user: "{{ venafi.user | default(omit) }}"
     password: "{{ venafi.password | default(omit) }}"
     access_token: "{{ venafi.access_token | default(omit) }}"
-    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
     cert_path: "{{ ssh_cert_path }}"
     public_key_path: "{{ ssh_public_key_path }}"
     private_key_path: "{{ ssh_private_key_path }}"
@@ -36,32 +36,33 @@
     windows_cert: "{{ ssh_windows_cert | default(omit) }}"
     force: "{{ ssh_force if ssh_force is defined else false }}"
   delegate_to: localhost
-  register: certout
-- name: "dump test output"
-  debug:
-    msg: "{{ certout }}"
+  register: ssh_certificate_output
+
+- name: "Dump test output"
+  ansible.builtin.debug:
+    msg: "{{ ssh_certificate_output }}"
 
 - name: "Check private key file exists"
-  stat:
+  ansible.builtin.stat:
     path: "{{ ssh_private_key_path }}"
-  register: private_key_stat
+  register: ssh_certificate_private_key_stat
 
 - name: "Copy Venafi SSH certificate file to remote location {{ ssh_remote_cert_path if ssh_remote_cert_path is defined else ssh_cert_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssh_cert_path }}"
     dest: "{{ ssh_remote_cert_path if ssh_remote_cert_path else ssh_cert_path }}"
     mode: 0644
 
 - name: "Copy Venafi public key file to remote location {{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssh_public_key_path }}"
     dest: "{{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
     mode: 0644
   when: ssh_copy_public_key_to_remote
 
 - name: "Copy Venafi private key file to remote location {{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ ssh_private_key_path }}"
     dest: "{{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
     mode: 0600
-  when: ssh_copy_private_key_to_remote and private_key_stat.stat.exists
+  when: ssh_copy_private_key_to_remote and ssh_certificate_private_key_stat.stat.exists

@@ -7,15 +7,31 @@ pep8:
 yamllint:
 	yamllint `git ls-files '*.yml' | grep -v ISSUE_TEMPLATE`
 
-lint: yamllint pep8
+lint: lint-certificate lint-policy lint-ssh-ca lint-ssh-certificate
+
+lint-certificate: yamllint pep8
 	# Certificate role
 	ansible-lint -x 106,204,504 ./roles/certificate/tasks/*
 	ansible-lint ./roles/certificate/meta/*
 	ansible-lint ./roles/certificate/defaults/*
+
+lint-policy: yamllint pep8
 	# Policy role
 	ansible-lint -x 106,204,504 ./roles/policy/tasks/*
 	ansible-lint ./roles/policy/meta/*
 	ansible-lint ./roles/policy/defaults/*
+
+lint-ssh-ca: yamllint pep8
+	# SSH_CA role
+	ansible-lint -x 106,204,504 ./roles/ssh_ca/tasks/*
+	ansible-lint ./roles/ssh_ca/meta/*
+	ansible-lint ./roles/ssh_ca/defaults/*
+
+lint-ssh-certificate: yamllint pep8
+	# SSH_Certificate role
+	ansible-lint -x 106,204,504 ./roles/ssh_certificate/tasks/*
+	ansible-lint ./roles/ssh_certificate/meta/*
+	ansible-lint ./roles/ssh_certificate/defaults/*
 
 ansible-molecule:
 	docker build ./tests --tag local-ansible-test

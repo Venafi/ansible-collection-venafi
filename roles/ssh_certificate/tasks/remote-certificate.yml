@@ -7,7 +7,7 @@
     user: "{{ venafi.user | default(omit) }}"
     password: "{{ venafi.password | default(omit) }}"
     access_token: "{{ venafi.access_token | default(omit) }}"
-    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
     cert_path: "{{ ssh_cert_path }}"
     public_key_path: "{{ ssh_public_key_path }}"
     private_key_path: "{{ ssh_private_key_path }}"
@@ -26,7 +26,8 @@
     source_addresses: "{{ ssh_source_addresses | default(omit) }}"
     windows_cert: "{{ ssh_windows_cert | default(omit) }}"
     force: "{{ ssh_force if ssh_force is defined else false }}"
-  register: certout
-- name: "dump test output"
-  debug:
-    msg: "{{ certout }}"
+  register: ssh_certificate_certout
+
+- name: "Dump test output"
+  ansible.builtin.debug:
+    msg: "{{ ssh_certificate_certout }}"

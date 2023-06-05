@@ -4,7 +4,7 @@
 # TODO: maybe rewrite to delegate to be able to register certificate from any host?
 ---
 - name: "Create directory {{ certificate_cert_dir }}"
-  file:
+  ansible.builtin.file:
     path: "{{ certificate_cert_dir }}"
     state: directory
     mode: 0755
@@ -19,7 +19,7 @@
     user: "{{ venafi.user | default(omit) }}"
     password: "{{ venafi.password | default(omit) }}"
     access_token: "{{ venafi.access_token | default(omit) }}"
-    trust_bundle: "{{ venafi.trust_bundle  | default(omit) }}"
+    trust_bundle: "{{ venafi.trust_bundle | default(omit) }}"
     cert_path: "{{ certificate_cert_path }}"
     chain_path: "{{ certificate_chain_path | default(omit) }}"
     csr_origin: "{{ certificate_csr_origin | default(omit) }}"
@@ -38,34 +38,35 @@
     issuer_hint: "{{ certificate_issuer_hint | default(omit) }}"
     custom_fields: "{{ certificate_custom_fields | default(omit) }}"
   delegate_to: localhost
-  register: certout
-- name: "dump test output"
-  debug:
-    msg: "{{ certout }}"
+  register: certificate_output
 
-- name: "Copy Venafi PEM certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
-  copy:
+- name: "Dump test output"
+  ansible.builtin.debug:
+    msg: "{{ certificate_output }}"
+
+- name: "Copy Venafi PEM certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
+  ansible.builtin.copy:
     src: "{{ certificate_cert_path }}"
-    dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+    dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
     mode: 0644
   when: not certificate_pkcs12_format
 
-- name: "Copy Venafi PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12  is defined else certificate_cert_path_pkcs12 }}"
-  copy:
+- name: "Copy Venafi PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
+  ansible.builtin.copy:
     src: "{{ certificate_cert_path_pkcs12 }}"
-    dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12  is defined else certificate_cert_path_pkcs12 }}"
+    dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
     mode: 0644
   when: certificate_pkcs12_format
 
 - name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ certificate_privatekey_path }}"
     dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
     mode: 0600
   when: certificate_copy_private_key_to_remote
 
 - name: "Copy Venafi certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
-  copy:
+  ansible.builtin.copy:
     src: "{{ certificate_chain_path }}"
     dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
     mode: 0644
