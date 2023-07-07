@@ -149,5 +149,3 @@
             weight: 40
         disabled: no
       delegate_to: localhost
-
-

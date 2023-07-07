@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright 2021 Venafi, Inc.
 #
@@ -14,16 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from vcert.parser import FIELD_OWNERS, FIELD_APPROVERS, FIELD_USER_ACCESS, FIELD_DOMAINS, FIELD_POLICY, \
-    FIELD_WILDCARD_ALLOWED, FIELD_MAX_VALID_DAYS, FIELD_CERTIFICATE_AUTHORITY, FIELD_AUTOINSTALLED, FIELD_SUBJECT, \
-    FIELD_ORGS, FIELD_ORG_UNITS, FIELD_LOCALITIES, FIELD_STATES, FIELD_COUNTRIES, FIELD_KEY_PAIR, \
-    FIELD_SERVICE_GENERATED, FIELD_REUSE_ALLOWED, FIELD_RSA_KEY_SIZES, FIELD_ELLIPTIC_CURVES, FIELD_KEY_TYPES, \
-    FIELD_SUBJECT_ALT_NAMES, FIELD_DNS_ALLOWED, FIELD_EMAIL_ALLOWED, FIELD_IP_ALLOWED, FIELD_UPN_ALLOWED, \
-    FIELD_URI_ALLOWED, FIELD_DEFAULTS, FIELD_DEFAULT_DOMAIN, FIELD_DEFAULT_AUTOINSTALLED, FIELD_DEFAULT_SUBJECT, \
-    FIELD_DEFAULT_ORG, FIELD_DEFAULT_LOCALITY, FIELD_DEFAULT_STATE, FIELD_DEFAULT_COUNTRY, FIELD_DEFAULT_KEY_PAIR, \
-    FIELD_DEFAULT_ELLIPTIC_CURVE, FIELD_DEFAULT_RSA_KEY_SIZE, FIELD_DEFAULT_SERVICE_GENERATED, FIELD_DEFAULT_KEY_TYPE, \
-    FIELD_USERS
-from vcert.policy import PolicySpecification
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
+try:
+    from vcert.parser import FIELD_OWNERS, FIELD_APPROVERS, FIELD_USER_ACCESS, FIELD_DOMAINS, FIELD_POLICY, \
+        FIELD_WILDCARD_ALLOWED, FIELD_MAX_VALID_DAYS, FIELD_CERTIFICATE_AUTHORITY, FIELD_AUTOINSTALLED, FIELD_SUBJECT, \
+        FIELD_ORGS, FIELD_ORG_UNITS, FIELD_LOCALITIES, FIELD_STATES, FIELD_COUNTRIES, FIELD_KEY_PAIR, \
+        FIELD_SERVICE_GENERATED, FIELD_REUSE_ALLOWED, FIELD_RSA_KEY_SIZES, FIELD_ELLIPTIC_CURVES, FIELD_KEY_TYPES, \
+        FIELD_SUBJECT_ALT_NAMES, FIELD_DNS_ALLOWED, FIELD_EMAIL_ALLOWED, FIELD_IP_ALLOWED, FIELD_UPN_ALLOWED, \
+        FIELD_URI_ALLOWED, FIELD_DEFAULTS, FIELD_DEFAULT_DOMAIN, FIELD_DEFAULT_AUTOINSTALLED, FIELD_DEFAULT_SUBJECT, \
+        FIELD_DEFAULT_ORG, FIELD_DEFAULT_LOCALITY, FIELD_DEFAULT_STATE, FIELD_DEFAULT_COUNTRY, FIELD_DEFAULT_KEY_PAIR, \
+        FIELD_DEFAULT_ELLIPTIC_CURVE, FIELD_DEFAULT_RSA_KEY_SIZE, FIELD_DEFAULT_SERVICE_GENERATED, FIELD_DEFAULT_KEY_TYPE, \
+        FIELD_USERS
+except ImportError:
+    HAS_VCERT = True
+else:
+    HAS_VCERT = False
 
 ERR_MSG = '%s changed. Local: %s Remote: %s'
 EMPTY_MSG = '%s structure is empty on %s but exists on %s'
@@ -62,10 +69,10 @@ def _get_empty_msg(name, empty_type):
 
 def check_policy_specification(local_ps, remote_ps):
     """
-    Validates that all values present in the source PolicySpecification match with
+    Validates that all values present in the source vcert.policy.PolicySpecification match with
     the current output PolicySpecification
-    :param PolicySpecification local_ps:
-    :param PolicySpecification remote_ps:
+    :param vcert.policy.PolicySpecification local_ps:
+    :param vcert.policy.PolicySpecification remote_ps:
     :rtype: tuple[bool, list[str]]
     """
     is_changed = False

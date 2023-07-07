@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 #
 # Copyright 2019 Venafi, Inc.
 #
@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
 DOCUMENTATION = '''
 ---
@@ -171,6 +172,7 @@ options:
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
+    - venafi.machine_identity.venafi_connection_options
 '''
 
 EXAMPLES = '''
@@ -274,7 +276,6 @@ chain_filename:
     sample: /etc/ssl/www.venafi.example_chain.pem
 '''
 
-import time
 import datetime
 import os.path
 import random
@@ -292,8 +293,7 @@ except ImportError:
 
 HAS_VCERT = HAS_CRYPTOGRAPHY = True
 try:
-    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, \
-        IssuerHint, CustomField
+    from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, CustomField
 except ImportError:
     HAS_VCERT = False
 try:
@@ -399,7 +399,7 @@ class VCertificate:
         key_dir = os.path.dirname(self.privatekey_filename or "/a")
         chain_dir = os.path.dirname(self.chain_filename or "/a")
         ok = True
-        for p in {cert_dir, key_dir, chain_dir}:
+        for p in [cert_dir, key_dir, chain_dir]:
             if os.path.isdir(p):
                 continue
             elif os.path.exists(p):
@@ -471,7 +471,7 @@ class VCertificate:
                                                % self.privatekey_type))
                 if key_type == "rsa":
                     request.key_type = KeyType(KeyType.RSA, self.privatekey_size)
-                elif key_type == "ecdsa" or "ec":
+                elif key_type == "ecdsa" or key_type == "ec":
                     request.key_type = KeyType(KeyType.ECDSA, self.privatekey_curve)
                 else:
                     self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
@@ -659,7 +659,7 @@ class VCertificate:
     def _check_files_permissions(self):
         files = (self.privatekey_filename, self.certificate_filename,
                  self.chain_filename)
-        return all([self._check_file_permissions(x) for x in files])
+        return all(self._check_file_permissions(x) for x in files)
 
     def _check_file_permissions(self, path, update=False):
         return True  # todo: write
@@ -683,6 +683,7 @@ class VCertificate:
                     try:
                         if self.use_pkcs12:
                             b_pass = self.privatekey_passphrase.encode() if self.privatekey_passphrase else None
+                            # pylint: disable=disallowed-name
                             pk, cert, _ = pkcs12.load_key_and_certificates(cert_data.read(), b_pass, default_backend())
                         else:
                             cert = x509.load_pem_x509_certificate(cert_data.read(), default_backend())

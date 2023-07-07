@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright 2021 Venafi, Inc.
@@ -15,6 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
+
 DOCUMENTATION = '''
 ---
 module: venafi_policy
@@ -42,8 +45,8 @@ seealso:
     - module: venafi.machine_identity.venafi_certificate
 extends_documentation_fragment:
     - files
-    - venafi.machine_identity.venafi_connection_options
     - venafi.machine_identity.common_options
+    - venafi.machine_identity.venafi_connection_options
 '''
 
 EXAMPLES = '''
@@ -79,18 +82,14 @@ from ansible.module_utils._text import to_native
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
-    from ansible_collections.venafi.machine_identity.plugins.module_utils.policy_utils \
-        import check_policy_specification
 except ImportError:
     from plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
-    from plugins.module_utils.policy_utils import check_policy_specification
 
 HAS_VCERT = True
 try:
     from vcert.errors import VenafiError
     from vcert.parser import json_parser, yaml_parser
-    from vcert.policy import PolicySpecification
 except ImportError:
     HAS_VCERT = False
 
@@ -186,11 +185,11 @@ class VPolicyManagement:
 
     def _read_policy_spec_file(self, ps_filename):
         """
-        Reads the content of the given file and parses it to a PolicySpecification object
+        Reads the content of the given file and parses it to a vcert.policy.PolicySpecification object
         that Venafi can use to create policies
 
-        :param str ps_filename: The path of the PolicySpecification file to read
-        :rtype: PolicySpecification
+        :param str ps_filename: The path of the vcert.policy.PolicySpecification file to read
+        :rtype: vcert.policy.PolicySpecification
         """
         parser = _get_policy_spec_parser(ps_filename)
         ps = parser.parse_file(ps_filename) if parser else None
@@ -214,7 +213,7 @@ class VPolicyManagement:
 
     def set_policy(self):
         """
-        Reads the content of the source PolicySpecification and creates a policy in Venafi
+        Reads the content of the source vcert.policy.PolicySpecification and creates a policy in Venafi
         with the zone as name
 
         :return: Nothing

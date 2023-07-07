@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright 2021 Venafi, Inc.
 #
@@ -14,9 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from ansible.module_utils.basic import AnsibleModule
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
-from vcert import Connection, venafi_connection, CommonConnection, IssuerHint, Authentication
+try:
+    from vcert import Connection, venafi_connection, IssuerHint, Authentication
+except ImportError:
+    HAS_VCERT = True
+else:
+    HAS_VCERT = False
 
 F_TEST_MODE = 'test_mode'
 F_URL = 'url'
@@ -68,10 +74,10 @@ def module_common_argument_spec():
 def get_venafi_connection(module, platform=None):
     """
 
-    :param AnsibleModule module:
+    :param ansible.module_utils.basic.AnsibleModule module:
     :param VenafiPlatform platform:
     :return: a connection to an instance of a Venafi platform
-    :rtype: CommonConnection
+    :rtype: vcert.CommonConnection
     """
     test_mode = module.params[F_TEST_MODE]
     url = module.params[F_URL]

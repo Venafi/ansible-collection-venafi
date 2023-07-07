@@ -22,7 +22,7 @@ class FakeModule(object):
     def __init__(self, asset):
         self.fail_code = None
         self.exit_code = None
-        self.warn =  str
+        self.warn = str
         self.params = defaultdict(lambda: None)
         self.params["cert_path"] = CERT_PATH
         self.params["chain_path"] = CHAIN_PATH
@@ -67,7 +67,7 @@ def create_testfiles(asset):
 TEST_ASSETS = [
     # TODO check error message, not just valid\invalid
     # simple valid
-    testAsset(is_valid=True,  cert="valid_rsa2048_cert.pem", chain="valid_rsa2048_chain.pem",
+    testAsset(is_valid=True, cert="valid_rsa2048_cert.pem", chain="valid_rsa2048_chain.pem",
               private_key="valid_rsa2048_key.pem", password=None, common_name="test111.venafi.example.com",
               alt_name=None, id=1),
     # another cn
@@ -101,4 +101,3 @@ TEST_ASSETS = [
               private_key="valid_rsa2048_key.pem", password=None, common_name="test123.venafi.example.com",
               alt_name=None, id=8)
 ]
-

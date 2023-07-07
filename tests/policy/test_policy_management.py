@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # Copyright 2021 Venafi, Inc.
 #
@@ -16,7 +15,6 @@
 #
 import os
 import unittest
-from pprint import pprint
 
 from vcert.parser import json_parser
 

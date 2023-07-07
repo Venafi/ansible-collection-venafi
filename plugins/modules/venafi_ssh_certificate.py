@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright 2019 Venafi, Inc.
 #
@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
 DOCUMENTATION = """
 ---
@@ -125,7 +126,7 @@ options:
         description:
             - >-
                 The requested force command. Example. "ForceCommand": "/usr/scripts/db_backup.sh"
-        type:
+        type: str
     source_addresses:
         description:
             - >-
@@ -141,6 +142,7 @@ options:
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
+    - venafi.machine_identity.venafi_connection_options
 """
 
 EXAMPLES = """
@@ -237,7 +239,6 @@ except ImportError:
 HAS_VCERT = True
 try:
     from vcert import CommonConnection, SSHCertRequest, SSHKeyPair
-    from vcert.ssh_utils import SSHRetrieveResponse
 except ImportError:
     HAS_VCERT = False
 
@@ -406,7 +407,7 @@ class VSSHCertificate:
 
     def _write_response(self, response):
         """
-        :param SSHRetrieveResponse response:
+        :param vcert.ssh_utils.SSHRetrieveResponse response:
         :rtype: None
         """
         cert_data = response.certificate_data
@@ -441,7 +442,7 @@ class VSSHCertificate:
         private_key_dir = os.path.dirname(self.private_key_filename or "/a")
         public_key_dir = os.path.dirname(self.public_key_filename or "/a")
         ok = True
-        for p in {cert_dir, private_key_dir, public_key_dir}:
+        for p in [cert_dir, private_key_dir, public_key_dir]:
             if os.path.isdir(p):
                 continue
             elif os.path.exists(p):
