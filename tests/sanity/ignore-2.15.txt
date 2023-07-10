@@ -1,0 +1,4 @@
+plugins/modules/venafi_certificate.py validate-modules:missing-gplv3-license
+plugins/modules/venafi_policy.py validate-modules:missing-gplv3-license
+plugins/modules/venafi_ssh_ca.py validate-modules:missing-gplv3-license
+plugins/modules/venafi_ssh_certificate.py validate-modules:missing-gplv3-license

@@ -11,3 +11,4 @@ tests/library
 tests/roles/
 *.retry
 .cache
+.DS_Store
