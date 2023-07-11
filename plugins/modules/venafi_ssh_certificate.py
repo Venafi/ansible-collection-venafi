@@ -28,6 +28,8 @@ version_added: "0.7.0"
 author: Russel Vela (@rvelaVenafi)
 options:
     cert_path:
+        aliases:
+            - path
         description:
             - Remote absolute path where the generated certificate file should be created or is already located.
         required: true
@@ -120,8 +122,7 @@ options:
             - >-
                 Example: "Extensions" : {"permit-pty": "", "permit-port-forwarding": "",
                 "login@github.com": "alice@github.com"}
-        type: list
-        elements: str
+        type: dict
     force_command:
         description:
             - >-
@@ -145,7 +146,7 @@ extends_documentation_fragment:
     - venafi.machine_identity.venafi_connection_options
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 # Enroll SSH certificate with default values
 ---
 - name: "enroll_ssh_certificate_default"
@@ -153,7 +154,7 @@ EXAMPLES = """
     url: "https://venafi.example.com"
     access_token: "AnkEFGHY+IpaTPyiM3DHsMR=="
     cert_path: "/path/to/ssh/certificate"
-    template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
+    template: \VED\Certificate Authority\SSH\Templates\my-ssh-cit
     key_id: "ssh-cert-id"
   register: certout
 - name: "dump test output"

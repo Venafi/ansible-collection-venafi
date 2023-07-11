@@ -49,11 +49,11 @@ def venafi_common_argument_spec():
     """
     options = dict(
         test_mode=dict(type='bool', required=False, default=False),
-        url=dict(type='str', required=False, default=''),
-        user=dict(type='str', required=False, default='', no_log=True),
-        password=dict(type='str', required=False, default='', no_log=True),
-        token=dict(type='str', required=False, default='', no_log=True),
-        access_token=dict(type='str', required=False, default='', no_log=True),
+        url=dict(type='str', required=False, default=None),
+        user=dict(type='str', required=False, default=None, no_log=True),
+        password=dict(type='str', required=False, default=None, no_log=True),
+        token=dict(type='str', required=False, default=None, no_log=True),
+        access_token=dict(type='str', required=False, default=None, no_log=True),
         trust_bundle=dict(type='str', required=False),
     )
     return options

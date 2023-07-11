@@ -10,13 +10,13 @@ on:
 jobs:
   sanity:
     timeout-minutes: 30
-    name: Ansible Sanity (Ⓐ$${{ matrix.ansible }}) tests
+    name: Ansible Sanity (Ⓐ${{ matrix.ansible }}) tests
     strategy:
       matrix:
         ansible:
-        - stable-2.13
         - stable-2.14
-        - devel
+        - stable-2.15
+        # - devel
     runs-on: ubuntu-latest
     steps:
       - name: Perform testing

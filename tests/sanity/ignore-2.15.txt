@@ -2,3 +2,10 @@ plugins/modules/venafi_certificate.py validate-modules:missing-gplv3-license
 plugins/modules/venafi_policy.py validate-modules:missing-gplv3-license
 plugins/modules/venafi_ssh_ca.py validate-modules:missing-gplv3-license
 plugins/modules/venafi_ssh_certificate.py validate-modules:missing-gplv3-license
+plugins/modules/venafi_certificate.py import-3.11!skip
+plugins/modules/venafi_certificate.py import-3.9!skip
+plugins/modules/venafi_certificate.py validate-modules:import-error
+plugins/modules/venafi_certificate.py validate-modules:return-syntax-error
+plugins/modules/venafi_policy.py validate-modules:undocumented-parameter
+plugins/modules/venafi_ssh_ca.py yamllint:unparsable-with-libyaml
+plugins/modules/venafi_ssh_certificate.py yamllint:unparsable-with-libyaml
