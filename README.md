@@ -34,7 +34,7 @@ pip install ansible vcert --upgrade
 
 ## Version History
 
-[Check version history here](docs/version_history.md)
+[Check version history here](https://github.com/Venafi/ansible-collection-venafi/blob/main/docs/version_history.md)
 
 ## License
 
