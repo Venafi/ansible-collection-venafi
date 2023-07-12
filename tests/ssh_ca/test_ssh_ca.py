@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # Copyright 2021 Venafi, Inc.
 #
@@ -18,6 +17,7 @@ from os import environ
 import unittest
 
 from plugins.modules.venafi_ssh_ca import VSSHCertAuthority
+from tests.policy.test_utils import FakeModule
 
 TPP_TOKEN_URL = environ.get("TPP_TOKEN_URL")
 TPP_ACCESS_TOKEN = environ.get("TPP_ACCESS_TOKEN")

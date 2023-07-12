@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright 2019 Venafi, Inc.
 #
@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
 DOCUMENTATION = """
 ---
@@ -46,6 +47,7 @@ options:
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
+    - venafi.machine_identity.venafi_connection_options
 """
 
 EXAMPLES = """
@@ -129,7 +131,7 @@ except ImportError:
 
 HAS_VCERT = True
 try:
-    from vcert import CommonConnection, SSHConfig, VenafiPlatform
+    from vcert import CommonConnection, VenafiPlatform
     from vcert.ssh_utils import SSHCATemplateRequest
 except ImportError:
     HAS_VCERT = False
@@ -231,7 +233,7 @@ class VSSHCertAuthority:
     def _write_response(self, response):
         """
 
-        :param SSHConfig response:
+        :param vcert.SSHConfig response:
         :rtype: None
         """
         public_key_data = response.ca_public_key

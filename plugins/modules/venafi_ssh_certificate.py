@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright 2019 Venafi, Inc.
 #
@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
 DOCUMENTATION = """
 ---
@@ -27,6 +28,8 @@ version_added: "0.7.0"
 author: Russel Vela (@rvelaVenafi)
 options:
     cert_path:
+        aliases:
+            - path
         description:
             - Remote absolute path where the generated certificate file should be created or is already located.
         required: true
@@ -119,13 +122,12 @@ options:
             - >-
                 Example: "Extensions" : {"permit-pty": "", "permit-port-forwarding": "",
                 "login@github.com": "alice@github.com"}
-        type: list
-        elements: str
+        type: dict
     force_command:
         description:
             - >-
                 The requested force command. Example. "ForceCommand": "/usr/scripts/db_backup.sh"
-        type:
+        type: str
     source_addresses:
         description:
             - >-
@@ -141,9 +143,10 @@ options:
 extends_documentation_fragment:
     - files
     - venafi.machine_identity.common_options
+    - venafi.machine_identity.venafi_connection_options
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 # Enroll SSH certificate with default values
 ---
 - name: "enroll_ssh_certificate_default"
@@ -151,7 +154,7 @@ EXAMPLES = """
     url: "https://venafi.example.com"
     access_token: "AnkEFGHY+IpaTPyiM3DHsMR=="
     cert_path: "/path/to/ssh/certificate"
-    template: "\\VED\\Certificate Authority\\SSH\\Templates\\my-ssh-cit"
+    template: \VED\Certificate Authority\SSH\Templates\my-ssh-cit
     key_id: "ssh-cert-id"
   register: certout
 - name: "dump test output"
@@ -237,7 +240,6 @@ except ImportError:
 HAS_VCERT = True
 try:
     from vcert import CommonConnection, SSHCertRequest, SSHKeyPair
-    from vcert.ssh_utils import SSHRetrieveResponse
 except ImportError:
     HAS_VCERT = False
 
@@ -406,7 +408,7 @@ class VSSHCertificate:
 
     def _write_response(self, response):
         """
-        :param SSHRetrieveResponse response:
+        :param vcert.ssh_utils.SSHRetrieveResponse response:
         :rtype: None
         """
         cert_data = response.certificate_data
@@ -441,7 +443,7 @@ class VSSHCertificate:
         private_key_dir = os.path.dirname(self.private_key_filename or "/a")
         public_key_dir = os.path.dirname(self.public_key_filename or "/a")
         ok = True
-        for p in {cert_dir, private_key_dir, public_key_dir}:
+        for p in [cert_dir, private_key_dir, public_key_dir]:
             if os.path.isdir(p):
                 continue
             elif os.path.exists(p):
