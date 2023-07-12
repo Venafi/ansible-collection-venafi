@@ -2,6 +2,8 @@
 
 ## Version History
 
+#### 0.10.0
+ * Fixed linter issues and code changes as prep work for getting the collection certified by Red Hat
 #### 0.9.0
  * Updated vcert dependencies to patch security vulnerabilities
  * Fixed all linter errors reported by ansible-lint
