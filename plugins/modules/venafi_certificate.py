@@ -604,7 +604,7 @@ class VCertificate:
             ext = cert.extensions
             try:
                 alt_names = ext.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
-            except x509.extensions.ExtensionNotFound as enf:
+            except x509.extensions.ExtensionNotFound:
                 # If the OID is not found, the x509 object raises an error we need to catch.
                 alt_names = []
 

@@ -2,6 +2,8 @@
 
 ## Version History
 
+### 1.0.0
+* Release version of venafi.machine_identity collection
 #### 0.10.0
  * Fixed linter issues and code changes as prep work for getting the collection certified by Red Hat
 #### 0.9.0
