@@ -52,7 +52,6 @@ extends_documentation_fragment:
 
 EXAMPLES = """
 # Retrieve CA public key data only
----
 - name: "retrieve_ssh_ca_public_key_default"
   venafi.machine_identity.venafi_ssh_ca:
     url: "https://venafi.example.com"
@@ -64,7 +63,6 @@ EXAMPLES = """
     msg: "{{ ca_out }}"
 
 # Retrieve CA public key data and principals using user/password
----
 - name: "retrieve_ssh_ca_public_key_and_principals"
   venafi.machine_identity.venafi_ssh_ca:
     url: "https://venafi.example.com"
@@ -78,7 +76,6 @@ EXAMPLES = """
     msg: "{{ ca_out }}"
 
 # Retrieve CA public key data and principals using access token
----
 - name: "retrieve_ssh_ca_public_key_and_principals"
   venafi.machine_identity.venafi_ssh_ca:
     url: "https://venafi.example.com"

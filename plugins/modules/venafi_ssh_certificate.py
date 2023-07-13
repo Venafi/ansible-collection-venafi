@@ -148,7 +148,6 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 # Enroll SSH certificate with default values
----
 - name: "enroll_ssh_certificate_default"
   venafi.machine_identity.venafi_ssh_certificate:
     url: "https://venafi.example.com"
@@ -162,7 +161,6 @@ EXAMPLES = r"""
     msg: "{{ certout }}"
 
 # Enroll SSH certificate with public key provided by user
----
 - name: "enroll_ssh_certificate_provided"
   venafi.machine_identity.venafi_ssh_certificate:
     url: "https://venafi.example.com"
@@ -178,7 +176,6 @@ EXAMPLES = r"""
     msg: "{{ certout }}"
 
 # Enroll SSH certificate with public key generated locally with custom values
----
 - name: "enroll_ssh_certificate_local_custom"
   venafi.machine_identity.venafi_ssh_certificate:
     url: "https://venafi.example.com"
