@@ -2,6 +2,12 @@
 
 ## Version History
 
+#### 1.0.1
+* Added minimum required version of Ansible to the README Requirements section.
+* Added minimum required version of Python to the README Requirements section.
+* Added collection installation instructions to the README file.
+* Fixed changelog file location
+* Resolved a couple yamllint test warnings
 ### 1.0.0
 * Release version of venafi.machine_identity collection
 #### 0.10.0
