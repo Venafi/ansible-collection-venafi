@@ -53,6 +53,16 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    zone: 'Business App\\Enterprise CIT'
    EOF
    ```
+
+   **Venafi as a Service EU**:
+   
+   ```sh
+   cat <<EOF >>credentials.yml
+   url: 'https://api.venafi.eu'
+   token: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+   zone: 'Business App\\Enterprise CIT'
+   EOF
+   ```
    
    The policy role supports the following connection and credential settings:
    
@@ -63,7 +73,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `test_mode`    | When "true", the role operates without connecting to Trust Protection Platform or Venafi as a Service |
    | `token`        | Venafi as a Service API key                                         |
    | `trust_bundle` | Text file containing trust anchor certificates in PEM (text) format, generally required for Trust Protection Platform |
-   | `url`          | Venafi service URL (e.g. "https://tpp.venafi.example"), generally only applicable to Trust Protection Platform |
+   | `url`          | Venafi service URL (e.g. "https://tpp.venafi.example") |
    | `user`         | **[DEPRECATED]** Trust Protection Platform WebSDK username, use `access_token` if possible |
    | `zone`         | Policy folder for TPP or Application name and Issuing Template API Alias for VaaS (e.g. "Business App\Enterprise CIT") |
 
