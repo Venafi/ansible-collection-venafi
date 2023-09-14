@@ -71,7 +71,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    
    ```sh
    cat <<EOF >>credentials.yml
-   url: 'https://api.eu.venafi.cloud'
+   url: 'https://api.venafi.eu'
    token: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
    zone: 'Business App\\Enterprise CIT'
    EOF
