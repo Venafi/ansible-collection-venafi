@@ -87,7 +87,7 @@ def get_venafi_connection(module, platform=None):
     apikey = module.params[F_APIKEY]
     trust_bundle = module.params[F_TRUST_BUNDLE]
 
-    if user or password:
+    if user is not None or password is not None:
         module.warn("user/password authentication is deprecated. Use access token instead.")
 
     # Legacy Connection. Deprecated. Do not use
