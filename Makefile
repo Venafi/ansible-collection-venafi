@@ -83,3 +83,10 @@ ansible-molecule:
 
 unit-test:
 	PYTHONPATH=./:$PYTHONPATH pytest ./tests/certificate/test_venafi_certificate.py
+
+install:
+	ansible-galaxy collection build --force
+	ansible-galaxy collection install venafi-machine_identity-1.0.1.tar.gz --force
+
+uninstall:
+	rm -rf ~/.ansible/collections/ansible_collections/venafi
