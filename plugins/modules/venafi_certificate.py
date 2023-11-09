@@ -450,6 +450,8 @@ class VCertificate:
                 self.module.fail_json(msg="Missing parameter for Service Generated CSR: %s" % F_PK_PASSPHRASE)
             request.include_private_key = True
             self.serialize_private_key = True
+            if self.privatekey_type is not None:
+                request.key_type = self._get_key_type()
 
         elif self.csr_origin == CSR_ORIGIN_PROVIDED:
             if not self.csr_path:
@@ -465,17 +467,7 @@ class VCertificate:
                 private_key = to_text(open(self.privatekey_filename, "rb").read())
                 request.private_key = private_key
             elif self.privatekey_type:
-                key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
-                if not key_type:
-                    self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
-                                               % self.privatekey_type))
-                if key_type == "rsa":
-                    request.key_type = KeyType(KeyType.RSA, self.privatekey_size)
-                elif key_type == "ecdsa" or key_type == "ec":
-                    request.key_type = KeyType(KeyType.ECDSA, self.privatekey_curve)
-                else:
-                    self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
-                                               % self.privatekey_type))
+                request.key_type = self._get_key_type()
                 self.serialize_private_key = True
         else:
             self.module.fail_json(msg="Failed to determine %s: %s" % (F_CSR_ORIGIN, self.csr_origin))
@@ -505,6 +497,23 @@ class VCertificate:
 
         if self.serialize_private_key and cert.key is not None:
             self._atomic_write(self.privatekey_filename, cert.key)
+
+    def _get_key_type(self):
+        """
+
+        :rtype: KeyType
+        """
+        key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
+        if not key_type:
+            self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
+                                       % self.privatekey_type))
+        if key_type == "rsa":
+            return KeyType(KeyType.RSA, self.privatekey_size)
+        elif key_type == "ecdsa" or key_type == "ec":
+            return KeyType(KeyType.ECDSA, self.privatekey_curve)
+        else:
+            self.module.fail_json(msg=("Failed to determine key type: %s. Must be RSA or ECDSA"
+                                       % self.privatekey_type))
 
     def _get_pkcs12_cert_path(self):
         """
@@ -783,7 +792,7 @@ def main():
         module.exit_json(**change_dump)
 
     if not vcert.check_dirs_existed():
-        module.fail_json(msg="Dirs not existed")
+        module.fail_json(msg="directories do not exist")
     if change_dump['changed']:
         # TODO: Cover it by tests
         """
