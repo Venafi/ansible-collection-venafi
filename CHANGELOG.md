@@ -2,6 +2,9 @@
 
 ## Version History
 
+#### 1.0.2
+* Fixes an issue with csr origin service and private key types
+* Updates vcert dependency to v0.16.2
 #### 1.0.1
 * Added minimum required version of Ansible to the README Requirements section.
 * Added minimum required version of Python to the README Requirements section.
