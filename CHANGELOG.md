@@ -2,6 +2,8 @@
 
 ## Version History
 
+##### 1.0.3
+* Updates vcert dependency to v0.17.0 to fix a mismatch between requirements.txt and setup.py dependencies that impacted the collection
 #### 1.0.2
 * Fixes an issue with csr origin service and private key types
 * Updates vcert dependency to v0.16.2
