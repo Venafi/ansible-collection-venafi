@@ -64,6 +64,16 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    EOF
    ```
    
+   **Venafi as a Service AU**:
+
+   ```sh
+   cat <<EOF >>credentials.yml
+   url: 'https://api.au.venafi.cloud'
+   token: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+   zone: 'Business App\\Enterprise CIT'
+   EOF
+   ```
+
    The policy role supports the following connection and credential settings:
    
    | Variable Name  | Description                                                  |
