@@ -758,7 +758,7 @@ def main():
         before_expired_hours=dict(type='int', required=False, default=72),
         chain_option=dict(type='str', required=False, default='last'),
         chain_path=dict(type='path', required=False),
-        common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
+        common_name=dict(aliases=['CN', 'commonName'], type='str', required=True),
         csr_origin=dict(type='str', choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED],
                         default=CSR_ORIGIN_LOCAL),
         csr_path=dict(type='path', required=False),
