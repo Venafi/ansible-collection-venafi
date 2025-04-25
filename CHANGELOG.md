@@ -2,6 +2,8 @@
 
 ## Version History
 
+##### 1.1.0
+* Added support for TPP 25.1 and above
 ##### 1.0.3
 * Updates vcert dependency to v0.17.0 to fix a mismatch between requirements.txt and setup.py dependencies that impacted the collection
 #### 1.0.2
