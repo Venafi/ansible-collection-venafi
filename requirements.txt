@@ -1,3 +1,2 @@
-vcert==0.18.0
-ansible==8.0.0
-cryptography==42.0.2
+vcert>=0.18.0
+cryptography>=42.0.2
