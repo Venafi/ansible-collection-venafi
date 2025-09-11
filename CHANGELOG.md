@@ -2,6 +2,8 @@
 
 ## Version History
 
+##### 1.1.1
+* Required changes to upload the version 1.1.0 in RedHat Ansible Automation Platform. There is not any change in the functionality.
 ##### 1.1.0
 * Added support for TPP 25.1 and above
 ##### 1.0.3
