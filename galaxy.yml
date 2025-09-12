@@ -71,3 +71,4 @@ build_ignore:
   - 'docs/*'
   - 'molecule/*'
   - 'venv/*'
+  - '.venv/*'
