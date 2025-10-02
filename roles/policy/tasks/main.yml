@@ -1,10 +1,10 @@
 ---
-- name: "Include vars into the venafi variable from {{ credentials_file }}"
+- name: "Include vars into the CyberArk variable from {{ credentials_file }}"
   ansible.builtin.include_vars:
     file: "{{ credentials_file }}"
     name: venafi
 
-- name: "Create Policy on Venafi platform"
+- name: "Create Policy on CyberArk platform"
   venafi.machine_identity.venafi_policy:
     state: "{{ state | default(omit) }}"
     force: "{{ force | default(omit) }}"

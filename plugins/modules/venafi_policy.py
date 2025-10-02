@@ -21,23 +21,23 @@ __metaclass__ = type
 DOCUMENTATION = '''
 ---
 module: venafi_policy
-short_description: Creates or deletes policies on Venafi platforms
+short_description: Creates or deletes policies on CyberArk platforms
 description:
-    - Venafi policy management module for working with Venafi as a Service and Venafi Trust Protection Platform.
-    - It allows to create a policy at I(zone) on the Venafi platform from a file defined by I(policy_spec_path).
+    - CyberArk policy management module for working with CyberArk Certificate Manager, SaaS and CyberArk Certificate Manager, Self-Hosted.
+    - It allows to create a policy at I(zone) on the CyberArk platform from a file defined by I(policy_spec_path).
     - As of now, policy's delete operation is not supported.
 version_added: "0.6.0"
 author: Russel Vela (@rvelaVenafi)
 options:
     zone:
         description:
-            - The location where the Policy Specification will be created on the Venafi platform.
+            - The location where the Policy Specification will be created on the CyberArk platform.
         required: true
         type: str
     policy_spec_path:
         description:
             - The path in the host of the Policy Specification file.
-            - When defined it will be used to create a new Policy in the Venafi platform located at I(zone).
+            - When defined it will be used to create a new Policy in the CyberArk platform located at I(zone).
             - Ignored when I(state=absent).
         default: null
         type: path
@@ -50,26 +50,26 @@ extends_documentation_fragment:
 '''
 
 EXAMPLES = '''
-- name: Create a Policy in VaaS
+- name: CyberArk Certificate Manager, SaaS
 
-- name: Create a Policy in Venafi TPP
+- name: Create a Policy in CyberArk Certificate Manager, Self-Hosted
 '''
 
 RETURN = '''
 created:
-    description: Name of the policy created at the Venafi platform. May be empty.
+    description: Name of the policy created at the CyberArk platform. May be empty.
     returned: always
     type: str
     sample: My_App\\my_policy
 
 deleted:
-    description: Name of the policy deleted at the Venafi platform. May be empty.
+    description: Name of the policy deleted at the CyberArk platform. May be empty.
     returned: always
     type: str
     sample: My_App_to_delete\\my_policy_to_delete
 
 updated:
-    description: Name of the policy updated at the Venafi platform. May be empty.
+    description: Name of the policy updated at the CyberArk platform. May be empty.
     returned: always
     type: str
     sample: My_App_to_update\\my_policy_to_update
@@ -152,8 +152,8 @@ class VPolicyManagement:
 
         if self.state == 'present':
             if remote_ps:
-                # Policy already exists in Venafi platform
-                # Validate that both, the source policy and the Venafi platform policy have the same content
+                # Policy already exists in CyberArk platform
+                # Validate that both, the source policy and the CyberArk platform policy have the same content
                 # local_ps = self._read_policy_spec_file(self.local_ps)
                 # changed, new_msgs = check_policy_specification(local_ps, remote_ps)
                 changed = True
@@ -161,24 +161,24 @@ class VPolicyManagement:
                     result[F_CHANGED] = True
                     result[F_POLICY_UPDATED] = self.zone
                     # msgs.extend(new_msgs)
-                    msgs.append('Policy %s found on Venafi platform. Overriding with values from %s'
+                    msgs.append('Policy %s found on CyberArk platform. Overriding with values from %s'
                                 % (self.zone, self.local_ps))
                 else:
                     msgs.append('No changes detected in local file %s. No action required' % self.local_ps)
             else:
-                # Policy does not exist in Venafi platform, must be created.
+                # Policy does not exist in CyberArk platform, must be created.
                 result[F_CHANGED] = True
                 result[F_POLICY_CREATED] = self.zone
-                msgs.append('Creating policy %s on Venafi platform' % self.zone)
+                msgs.append('Creating policy %s on CyberArk platform' % self.zone)
         elif self.state == 'absent':
             if remote_ps:
-                # Policy already exists in Venafi platform, must be deleted.
+                # Policy already exists in CyberArk platform, must be deleted.
                 result[F_CHANGED] = True
                 result[F_POLICY_DELETED] = self.zone
-                msgs.append('Deleting %s policy from Venafi platform' % self.zone)
+                msgs.append('Deleting %s policy from CyberArk platform' % self.zone)
             else:
-                # Policy does not exist on Venafi platform, no action required.
-                msgs.append('Policy %s is absent on Venafi platform. No action required' % self.zone)
+                # Policy does not exist on CyberArk platform, no action required.
+                msgs.append('Policy %s is absent on CyberArk platform. No action required' % self.zone)
 
         result[F_CHANGED_MSGS] = ' | '.join(msgs)
         return result
@@ -186,7 +186,7 @@ class VPolicyManagement:
     def _read_policy_spec_file(self, ps_filename):
         """
         Reads the content of the given file and parses it to a vcert.policy.PolicySpecification object
-        that Venafi can use to create policies
+        that CyberArk can use to create policies
 
         :param str ps_filename: The path of the vcert.policy.PolicySpecification file to read
         :rtype: vcert.policy.PolicySpecification
@@ -213,7 +213,7 @@ class VPolicyManagement:
 
     def set_policy(self):
         """
-        Reads the content of the source vcert.policy.PolicySpecification and creates a policy in Venafi
+        Reads the content of the source vcert.policy.PolicySpecification and creates a policy in CyberArk
         with the zone as name
 
         :return: Nothing
@@ -229,7 +229,7 @@ class VPolicyManagement:
 
     def delete_policy(self):
         """
-        Deletes the given policy on the Venafi platform
+        Deletes the given policy on the CyberArk platform
         :return: Nothing
         """
         self.module.fail_json(msg='Delete policy operation not supported by vcert python library')

@@ -50,7 +50,7 @@
     certificate_force: false
 
   tasks:
-    - name: "Include vars of {{ credentials_file }} into the venafi variable."
+    - name: "Include vars of {{ credentials_file }} into the CyberArk variable."
       include_vars:
         file: "{{ credentials_file }}"
         name: venafi
@@ -61,7 +61,7 @@
         path: "{{ certificate_cert_dir }}"
         state: directory
 
-    - name: "Enroll Venafi certificate on local host"
+    - name: "Enroll CyberArk certificate on local host"
       local_action:
         module: venafi.machine_identity.venafi_certificate
         url: "{{ venafi.url | default(omit) }}"
@@ -82,18 +82,18 @@
         msg: "{{ certout }}"
 
 
-    - name: "Copy Venafi certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
+    - name: "Copy CyberArk certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
       copy:
         src: "{{ certificate_cert_path }}"
         dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path  is defined else certificate_cert_path }}"
 
-    - name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+    - name: "Copy CyberArk private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
       copy:
         src: "{{ certificate_privatekey_path }}"
         dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
       when: certificate_copy_private_key_to_remote
 
-    - name: "Copy Venafi certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+    - name: "Copy CyberArk certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
       copy:
         src: "{{ certificate_chain_path }}"
         dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
@@ -104,7 +104,7 @@
         name:
           - vcert
 
-    - name: "Verify Venafi certificate on remote host"
+    - name: "Verify CyberArk certificate on remote host"
       venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"
@@ -149,7 +149,7 @@
         msg: "Certificate should be in changed stage but it is not"
       when: cert_validation_failed is not changed
 
-    - name: "This one shouldn't enroll new Venafi certificate on remote host because it's valid"
+    - name: "This one shouldn't enroll new CyberArk certificate on remote host because it's valid"
       venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"

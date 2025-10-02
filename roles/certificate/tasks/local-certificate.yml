@@ -10,7 +10,7 @@
     mode: 0755
   delegate_to: localhost
 
-- name: "Enroll Venafi certificate on local host"
+- name: "Enroll CyberArk certificate on local host"
   venafi.machine_identity.venafi_certificate:
     url: "{{ venafi.url | default(omit) }}"
     token: "{{ venafi.token | default(omit) }}"
@@ -44,28 +44,28 @@
   ansible.builtin.debug:
     msg: "{{ certificate_output }}"
 
-- name: "Copy Venafi PEM certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
+- name: "Copy CyberArk PEM certificate file to remote location {{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
   ansible.builtin.copy:
     src: "{{ certificate_cert_path }}"
     dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
     mode: 0644
   when: not certificate_pkcs12_format
 
-- name: "Copy Venafi PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
+- name: "Copy CyberArk PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
   ansible.builtin.copy:
     src: "{{ certificate_cert_path_pkcs12 }}"
     dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
     mode: 0644
   when: certificate_pkcs12_format
 
-- name: "Copy Venafi private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
+- name: "Copy CyberArk private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
   ansible.builtin.copy:
     src: "{{ certificate_privatekey_path }}"
     dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
     mode: 0600
   when: certificate_copy_private_key_to_remote
 
-- name: "Copy Venafi certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
+- name: "Copy CyberArk certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
   ansible.builtin.copy:
     src: "{{ certificate_chain_path }}"
     dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"

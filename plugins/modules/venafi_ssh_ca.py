@@ -20,9 +20,9 @@ __metaclass__ = type
 DOCUMENTATION = """
 ---
 module: venafi_ssh_ca
-short_description: Retrieves SSH Certificate Authority public key data and principals from Venafi TPP.
+short_description: Retrieves SSH Certificate Authority public key data and principals from Venafi CyberArk Certificate Manager, Self-Hosted.
 description:
-    - This is the Venafi SSH Certificate Authority module for working with Venafi Trust Protection Platform.
+    - This is the CyberArk SSH Certificate Authority module for working with CyberArk Certificate Manager, Self-Hosted.
     - It allows to retrieve the public key and default principals from a given Certificate Authority.
 version_added: "0.7.5"
 author: Russel Vela (@rvelaVenafi)
@@ -188,7 +188,7 @@ class VSSHCertAuthority:
                 result = {
                     F_PUB_KEY_FILE_EXISTS: False,
                     F_CHANGED: True,
-                    F_CHANGED_MSG: "No SSH CA Public Key file found. Retrieving from Venafi platform.",
+                    F_CHANGED_MSG: "No SSH CA Public Key file found. Retrieving from CyberArk platform.",
                 }
         elif self.state == F_STATE_ABSENT:
             if public_key_file_exists:

@@ -1,6 +1,6 @@
 # Generates certificates on remote host
 ---
-- name: "Enroll Venafi certificate on remote host"
+- name: "Enroll CyberArk certificate on remote host"
   venafi.machine_identity.venafi_certificate:
     url: "{{ venafi.url | default(omit) }}"
     token: "{{ venafi.token | default(omit) }}"

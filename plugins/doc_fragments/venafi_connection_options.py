@@ -27,48 +27,48 @@ options:
 
     url:
         description:
-            - The url of the Venafi platform to connect to.
-            - B(Required) for Venafi TPP.
-            - Optional for VaaS. Only set the url when trying to reach a custom VaaS platform (dev, QA, staging, etc.).
+            - The url of the CyberArk platform to connect to.
+            - B(Required) for CyberArk Certificate Manager, Self-Hosted.
+            - Optional for CyberArk Certificate Manager, SaaS. Only set the url when trying to reach a custom CyberArk Certificate Manager, SaaS platform (dev, QA, staging, etc.).
         default: null
         type: str
 
     user:
         description:
-            - The username to authenticate at Venafi TPP.
+            - The username to authenticate at CyberArk Certificate Manager, Self-Hosted.
             - This option is deprecated. Use I(access_token) instead.
-            - Ignored for VaaS.
+            - Ignored for CyberArk Certificate Manager, SaaS.
         default: null
         type: str
 
     password:
         description:
-            - The password to authenticate at Venafi TPP.
+            - The password to authenticate at CyberArk Certificate Manager, Self-Hosted.
             - This option is deprecated. Use I(access_token) instead.
-            - Ignored for VaaS.
+            - Ignored for CyberArk Certificate Manager, SaaS.
         default: null
         type: str
 
     token:
         description:
-            - The api key to authenticate at VaaS platform.
-            - Required for VaaS.
-            - Ignored for Venafi TPP.
+            - The api key to authenticate at CyberArk Certificate Manager, SaaS platform.
+            - Required for CyberArk Certificate Manager, SaaS.
+            - Ignored for CyberArk Certificate Manager, Self-Hosted.
         default: null
         type: str
 
     access_token:
         description:
-            - The oauth token to authenticate at Venafi TPP.
+            - The oauth token to authenticate at CyberArk Certificate Manager, Self-Hosted.
             - Use it instead of user/password combination.
-            - Ignored for VaaS.
+            - Ignored for CyberArk Certificate Manager, SaaS.
         default: null
         type: str
 
     trust_bundle:
         description:
-            - the path to a PEM file to be used as trust anchor when communicating with Venafi TPP.
-            - Ignored for VaaS.
+            - the path to a PEM file to be used as trust anchor when communicating with CyberArk Certificate Manager, Self-Hosted.
+            - Ignored for CyberArk Certificate Manager, SaaS.
         default: null
         type: str
 '''

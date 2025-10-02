@@ -17,13 +17,13 @@ readme: README.md
 # A list of the collection's content authors. Can be just the name or in the format 'Full Name <email> (url)
 # @nicks:irc/im.site#channel'
 authors:
-  - Venafi Inc. <opensource@venafi.com>
+  - CyberArk Inc. <opensource@venafi.com>
   - Alexander Rykalin (https://github.com/arykalin)
   - Russel Vela (https://github.com/rvelaVenafi)
 
 ### OPTIONAL but strongly recommended
 # A short summary description of the collection
-description: Machine Identity Management (certificates, policies, etc.) using Venafi solutions.
+description: Machine Identity Management (certificates, policies, etc.) using CyberArk solutions.
 
 # Either a single license or a list of licenses for content inside of a collection. Ansible Galaxy currently only
 # accepts L(SPDX,https://spdx.org/licenses/) licenses. This key is mutually exclusive with 'license_file'

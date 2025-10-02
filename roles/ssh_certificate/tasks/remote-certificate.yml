@@ -1,6 +1,6 @@
 # Generates certificate on remote host
 ---
-- name: "Enroll Venafi SSH certificate on remote host"
+- name: "Enroll CyberArk SSH certificate on remote host"
   venafi.machine_identity.venafi_ssh_certificate:
     url: "{{ venafi.url | default(omit) }}"
     test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"

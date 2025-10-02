@@ -1,12 +1,12 @@
 ---
 # Credentials.
 venafi:
-  # Venafi Platform connection parameters
+  # CyberArk Certificate Manager, Self-Hosted connection parameters
   user: 'admin'
   password: 'secret'
   url: 'https://venafi.example.com/vedsdk'
   zone: "devops\\vcert"
-  # Venafi Cloud connection parameters
+  # CyberArk Certificate Manager, SaaS connection parameters
   # token: 'enter-cloud-api-token-here'
   # zone: 'Default'
   # Test mode parameter

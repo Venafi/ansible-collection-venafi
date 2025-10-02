@@ -1,19 +1,19 @@
-# Configuring secure application delivery using F5 BIG-IP and the Venafi Collection for Ansible
+# Configuring secure application delivery using F5 BIG-IP and the CyberArk Collection for Ansible
 
-In this example, we'll show you how to better secure application delivery using the Venafi Collection for Ansible with your [F5 BIG-IP](https://www.f5.com/products/big-ip-services) instance.
-Adding Venafi enables you to manage certificates more securely as part of the [TLS termination](https://www.f5.com/services/resources/glossary/ssl-termination) process on your load balancer.
+In this example, we'll show you how to better secure application delivery using the CyberArk Collection for Ansible with your [F5 BIG-IP](https://www.f5.com/products/big-ip-services) instance.
+Adding CyberArk enables you to manage certificates more securely as part of the [TLS termination](https://www.f5.com/services/resources/glossary/ssl-termination) process on your load balancer.
 
 ## Who should use this example?
 
-The steps described in this document are typically performed by a _DevOps engineers_ or a _system administrators_. Generally, you'll need a basic undestanding of F5 BIG-IP, Venafi Trust Protection Platform or Venafi Cloud, and the required permissions for completing the tasks described in the example.
+The steps described in this document are typically performed by a _DevOps engineers_ or a _system administrators_. Generally, you'll need a basic undestanding of F5 BIG-IP, CyberArk Certificate Manager, Self-Hosted or CyberArk Certificate Manager, SaaS, and the required permissions for completing the tasks described in the example.
 
 ## About this example
 
 An _application delivery controller_ (ADC) is used to increase capacity and reliability of applications. ADC improves the performance of applications by decreasing the load on associated servers while managing and maintaining application and network sessions. But ADC configuration can become a lengthy process. However, you can actually automate the process by using a configuration management tool.
 
-In this example we use [RedHat Ansible](https://www.ansible.com/) with the _Venafi Collection for Ansible_ to automate the process of requesting, retrieving and installing a certificate as part of SSL termination on an ADC (specifically, F5 BIG-IP) for load balancing web traffic. We'll also utilize three HTTP servers contained in a cluster as the endpoints that are sending and receiving web traffic and being managed by F5 BIG-IP.
+In this example we use [RedHat Ansible](https://www.ansible.com/) with the _CyberArk Collection for Ansible_ to automate the process of requesting, retrieving and installing a certificate as part of SSL termination on an ADC (specifically, F5 BIG-IP) for load balancing web traffic. We'll also utilize three HTTP servers contained in a cluster as the endpoints that are sending and receiving web traffic and being managed by F5 BIG-IP.
 
-Later in this example, you'll generate a certificate for the `demo-f5.venafi.example` domain using the Venafi Collection for Ansible to request and retrieve it from either _Venafi Trust Protection Platform_ or _Venafi Cloud_ services. Then you'll copy the certificate files (certificate, private key, chain bundle) to the F5 BIG-IP. Finally, you'll configure F5 BIG-IP to distribute the traffic between three HTTP servers using the round-robin load balancing method. Take a look at the diagram below for an overview of what we're going to create.
+Later in this example, you'll generate a certificate for the `demo-f5.venafi.example` domain using the CyberArk Collection for Ansible to request and retrieve it from either _CyberArk Certificate Manager, Self-Hosted_ or _CyberArk Certificate Manager, SaaS_ services. Then you'll copy the certificate files (certificate, private key, chain bundle) to the F5 BIG-IP. Finally, you'll configure F5 BIG-IP to distribute the traffic between three HTTP servers using the round-robin load balancing method. Take a look at the diagram below for an overview of what we're going to create.
 
 > **NOTE** In our example, we suggest that you use the round-robin balancing method. But keep in mind that there are [other methods](https://www.f5.com/services/resources/glossary/load-balancer) that might be more suitable for your specific use case.
 
@@ -23,9 +23,9 @@ Later in this example, you'll generate a certificate for the `demo-f5.venafi.exa
 
 To perform the tasks described in this example, you'll need:
 
-- The Venafi Collection for Ansible installed on your machine, you can install it using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy)
-- Access to either **Venafi Trust Protection Platform** or **Venafi Cloud** services (the `credentials.yml` [file](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy) is used in this example).
-  - If you are working with **Venafi Trust Protection Platform** obtain the `access_token` and `refresh_token` using the [VCert CLI](https://github.com/Venafi/vcert/blob/master/README-CLI-PLATFORM.md#obtaining-an-authorization-token).
+- The CyberArk Collection for Ansible installed on your machine, you can install it using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy)
+- Access to either **CyberArk Certificate Manager, Self-Hostedm** or **CyberArk Certificate Manager, SaaS** services (the `credentials.yml` [file](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy) is used in this example).
+  - If you are working with **CyberArk Certificate Manager, Self-Hosted** obtain the `access_token` and `refresh_token` using the [VCert CLI](https://github.com/Venafi/vcert/blob/master/README-CLI-PLATFORM.md#obtaining-an-authorization-token).
 - Administration access to the F5 BIG-IP instance. 
 - A set of 3 HTTP servers running your application.
 
@@ -33,7 +33,7 @@ To perform the tasks described in this example, you'll need:
 
 Here are the steps we'll take as we go trough this example:
 
-1. Retrieve a certificate using the Venafi Collection for Ansible
+1. Retrieve a certificate using the CyberArk Collection for Ansible
 2. Copy the retrieved certificate files to F5 BIG-IP
 3. Create a Client SSL Profile on F5 BIG-IP
 4. Create Pool on F5 BIG-IP
@@ -45,7 +45,7 @@ Here are the steps we'll take as we go trough this example:
 
 > **BEST PRACTICES** In general, be careful when using self-signed certificates because of the inherent risks of no identity verification or trust control. The public and private keys are both held by the same entity. Also, self-signed certificates cannot be revoked; they can only be replaced. If an attacker has already gained access to a system, the attacker can spoof the identity of the subject. Of course, CAs can revoke a certificate only when they discover the compromise.
 
-## Step 1: Retrieve a certificate using Venafi Collection for Ansible
+## Step 1: Retrieve a certificate using CyberArk Collection for Ansible
 
 ### Step 1a: Creating variables file
 
@@ -96,7 +96,7 @@ f5_provider:
 
 ### Step 1b: Creating the playbook
 
-Start by creating a YAML file named `f5_create_playbook.yaml`, inside, define a name for the playbook, the hosts in which the tasks will be executed, the type of connection to use, the name of the Venafi Collection for Ansible and specify the variables file created in the previous step :
+Start by creating a YAML file named `f5_create_playbook.yaml`, inside, define a name for the playbook, the hosts in which the tasks will be executed, the type of connection to use, the name of the CyberArk Collection for Ansible and specify the variables file created in the previous step :
 
 ```yaml
 - name: Create F5 Application
@@ -108,9 +108,9 @@ Start by creating a YAML file named `f5_create_playbook.yaml`, inside, define a 
     - variables.yaml
 ```
 
-### Step 1c: Requesting and retrieving the certificate using Venafi Role
+### Step 1c: Requesting and retrieving the certificate using CyberArk Role
 
-In the following block of instructions the Certificate Role included in the Venafi Collection for Ansible is being specified along with the variables it needs to request and retrieve the certificate from the Venafi services, by adding these instructions the Certificate Role will:
+In the following block of instructions the Certificate Role included in the CyberArk Collection for Ansible is being specified along with the variables it needs to request and retrieve the certificate from the CyberArk services, by adding these instructions the Certificate Role will:
 
 - Request and retrieve a certificate which common and alternate names are `demo-f5.venafi.example`.
 - Create a RSA private key of a size of 2048 bits.

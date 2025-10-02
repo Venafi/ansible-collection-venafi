@@ -1,19 +1,19 @@
-# Configuring secure application delivery using Citrix ADC and the Venafi Collection for Ansible
+# Configuring secure application delivery using Citrix ADC and the CyberArk Collection for Ansible
 
-In this example, we'll show you how to better secure application delivery using the Venafi Collection for Ansible with your [Citrix ADC](https://www.citrix.com/products/citrix-adc/) instance.
-Adding Venafi enables you to manage certificates more securely as part of the [TLS Termination](https://en.wikipedia.org/wiki/TLS_termination_proxy) process on your load balancer.
+In this example, we'll show you how to better secure application delivery using the CyberArk Collection for Ansible with your [Citrix ADC](https://www.citrix.com/products/citrix-adc/) instance.
+Adding CyberArk enables you to manage certificates more securely as part of the [TLS Termination](https://en.wikipedia.org/wiki/TLS_termination_proxy) process on your load balancer.
 
 ## Who should use this example?
 
-The steps described in this document are typically performed by _DevOps engineers_ or _system administrators_. Generally, you'll need a basic undestanding of Citrix ADC, Venafi Trust Protection Platform or Venafi Cloud, and the required permissions for completing the tastks described in the example.
+The steps described in this document are typically performed by _DevOps engineers_ or _system administrators_. Generally, you'll need a basic undestanding of Citrix ADC, CyberArk Certificate Manager, Self-Hosted or CyberArk Certificate Manager, SaaS, and the required permissions for completing the tastks described in the example.
 
 ## About this example
 
 An _application delivery controller_ (ADC) is used to increase the capacity and reliability of applications. ADC improves the performance of applications by decreasing the load on associated servers while managing and maintaining application and network sessions. But ADC configuration can become a long process. However, you can actually automate the process by using a configuration management tool.
 
-In this example, we use [RedHat Ansible](https://www.ansible.com/) with the _Venafi Collection for Ansible_ to automate the process of requesting, retrieving and installing a certificate as part of SSL termination on an ADC (specifically, Citrix ADC) for load balancing web traffic. We'll also utilize three HTTP servers contained in a cluster as the endpoints that are sending and receiving web traffic and being managed by Citrix ADC.
+In this example, we use [RedHat Ansible](https://www.ansible.com/) with the _CyberArk Collection for Ansible_ to automate the process of requesting, retrieving and installing a certificate as part of SSL termination on an ADC (specifically, Citrix ADC) for load balancing web traffic. We'll also utilize three HTTP servers contained in a cluster as the endpoints that are sending and receiving web traffic and being managed by Citrix ADC.
 
-Later in this example, you'll generate a certificate for the `demo-citrix.venafi.example` domain using the Venafi Collection for Ansible to request and retrieve it from either _Venafi Trust Protection Platform_ or _Venafi Cloud_ services. Then you'll copy the certificate files (certificate, private key, chain Bundle) to the Citrix ADC. Finally, you'll configure Citrix ADC to distribute the traffic between three NGINX servers using the round-robin load balancing method. Here below you can find a diagram of what we are trying to accomplish.
+Later in this example, you'll generate a certificate for the `demo-citrix.venafi.example` domain using the CyberArk Collection for Ansible to request and retrieve it from either _CyberArk Certificate Manager, Self-Hosted_ or _CyberArk Certificate Manager, SaaS_ services. Then you'll copy the certificate files (certificate, private key, chain Bundle) to the Citrix ADC. Finally, you'll configure Citrix ADC to distribute the traffic between three NGINX servers using the round-robin load balancing method. Here below you can find a diagram of what we are trying to accomplish.
 
 > **NOTE** In our example, we suggest that you use the round-robin balancing method. But keep in mind that there are [other methods](https://docs.citrix.com/en-us/citrix-adc/current-release/load-balancing/load-balancing-customizing-algorithms.html) that might be more suitable for your specific use case.
 
@@ -25,9 +25,9 @@ Later in this example, you'll generate a certificate for the `demo-citrix.venafi
 
 To perform the tasks described in this example, you'll need:
 
-- The Venafi Collection for Ansible installed on your machine; you can install it using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy)
-- Access to either Venafi Trust Protection Platform or Venafi Cloud services (the `credentials.yml` [file](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy) is used in this example)
-  - If you are working with Trust Protection Platform, obtain the `access_token` and `refresh_token` using the [VCert CLI](https://github.com/Venafi/vcert/blob/master/README-CLI-PLATFORM.md#obtaining-an-authorization-token).
+- The CyberArk Collection for Ansible installed on your machine; you can install it using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy)
+- Access to either CyberArk Certificate Manager, Self-Hosted or CyberArk Certificate Manager, SaaS (the `credentials.yml` [file](https://github.com/Venafi/ansible-role-venafi#using-with-ansible-galaxy) is used in this example)
+  - If you are working with CyberArk Certificate Manager, Self-Hosted, obtain the `access_token` and `refresh_token` using the [VCert CLI](https://github.com/Venafi/vcert/blob/master/README-CLI-PLATFORM.md#obtaining-an-authorization-token).
 - Administration access to a Citrix ADC instance
 - Nitro Python SDK (available from https://www.citrix.com/downloads/netscaler-adc or from the _Downloads_ tab of the Citrix ADC GUI)
 - Citrix ADC modules for Ansible installed from `ansible-galaxy` (for installation instructions, see [this guide](https://github.com/citrix/citrix-adc-ansible-modules#installation))
@@ -37,14 +37,14 @@ To perform the tasks described in this example, you'll need:
 
 Here are the steps we'll complete as we go through this example:
 
-1. Retrieve a certificate using the Venafi Collection for Ansible
+1. Retrieve a certificate using the CyberArk Collection for Ansible
 2. Copy the retrieved certificate files to Citrix ADC
 3. Create a certificate-key pair on Citrix ADC 
 4. Create HTTP back-end services on Citrix ADC
 5. Create a virtual server on Citrix ADC
 6. Execute the playbook
 
-## Step 1: Retrieve a certificate using the Venafi Collection for Ansible
+## Step 1: Retrieve a certificate using the CyberArk Collection for Ansible
 
 ### Step 1a: Creating variables file
 
@@ -82,7 +82,7 @@ chain_name: "{{ test_site.name }}-ca-bundle.crt"
 
 ### Step 1b: Creating the playbook
 
-Start by creating a YAML file named `citrix_create_playbook.yaml`, inside, define a name for the playbook, the hosts in which the tasks will be executed, the type of connection to use, the Citrix ADC collection as well as the Venafi Collection for Ansible and specify the variables file created in the previous step :
+Start by creating a YAML file named `citrix_create_playbook.yaml`, inside, define a name for the playbook, the hosts in which the tasks will be executed, the type of connection to use, the Citrix ADC collection as well as the CyberArk Collection for Ansible and specify the variables file created in the previous step :
 
 ```yaml
 - name: Create Critx ADC Application
@@ -97,9 +97,9 @@ Start by creating a YAML file named `citrix_create_playbook.yaml`, inside, defin
 ```
 
 
-### Step 1c: Requesting and retrieving the certificate using Venafi Role
+### Step 1c: Requesting and retrieving the certificate using CyberArk Role
 
-In the following block of instructions the Certificate Role included in the Venafi Collection for Ansible is being specified along with the variables it needs to request and retrieve the certificate from the Venafi services, by adding these instructions Certificate Role will:
+In the following block of instructions the Certificate Role included in the CyberArk Collection for Ansible is being specified along with the variables it needs to request and retrieve the certificate from the CyberArk services, by adding these instructions Certificate Role will:
 
 - Request and retrieve a certificate which common and alternate names are `demo-citrix.venafi.example`.
 - Create a RSA private key of a size of 2048 bits.
