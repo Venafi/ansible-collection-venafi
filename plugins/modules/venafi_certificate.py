@@ -391,7 +391,7 @@ class VCertificate:
                     self.module.fail_json(msg="Failed to determine extension type: %s" % n)
 
         # If csr_path exists, it takes priority over any other value (csr_origin)
-        if os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
+        if self.csr_path is not None and os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
             self.csr_origin = CSR_ORIGIN_PROVIDED
 
     def check_dirs_existed(self):
