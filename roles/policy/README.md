@@ -1,6 +1,6 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
-![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
+![CyberArk Certificate Manager, Self-Hosted 17.3+ & CyberArk Certificate Manager, SaaS](https://img.shields.io/badge/Compatibility-Certificate%20Manager%2C%20Self--Hosted_2017.3%2B_%26Certificate%20Manager%2C%20SaaS-f9a90c)
 _**This open source project is community-supported.** To report a problem or share an idea, use
 **[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
 In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
@@ -9,8 +9,8 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 
 # CyberArk `policy` Role for Ansible
 
-This role enables "Policy as Code" for [CyberArk Certificate Manager, Self-Hosted](https://www.venafi.com/platform/trust-protection-platform)
-or [CyberArk Certificate Manager, SaaS](https://vaas.venafi.com/) using [Red Hat Ansible](https://www.ansible.com/).  With it, certificate policy
+This role enables "Policy as Code" for [CyberArk Certificate Manager, Self-Hosted](https://www.cyberark.com/products/certificate-manager/)
+or [CyberArk Certificate Manager, SaaS](https://www.cyberark.com/products/certificate-manager/) using [Red Hat Ansible](https://www.ansible.com/).  With it, certificate policy
 documented by specification files can be applied to CyberArk to ensure compliance with enterprise standards.
 
 ## Requirements
@@ -152,8 +152,8 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    
 ## License
 
-Copyright &copy; Venafi, Inc. All rights reserved.
+Copyright &copy; Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 
 This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
 
-Please direct questions/comments to opensource@venafi.com.
+Please direct questions/comments to mis-opensource@cyberark.com.

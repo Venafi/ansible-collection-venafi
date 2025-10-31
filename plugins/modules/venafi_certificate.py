@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2019 Venafi, Inc.
+# Copyright 2019 Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

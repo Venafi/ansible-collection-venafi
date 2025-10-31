@@ -17,7 +17,7 @@ readme: README.md
 # A list of the collection's content authors. Can be just the name or in the format 'Full Name <email> (url)
 # @nicks:irc/im.site#channel'
 authors:
-  - CyberArk Inc. <opensource@venafi.com>
+  - CyberArk Inc. <mis-opensource@cyberark.com>
   - Alexander Rykalin (https://github.com/arykalin)
   - Russel Vela (https://github.com/rvelaVenafi)
 

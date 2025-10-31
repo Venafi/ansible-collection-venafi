@@ -1,6 +1,6 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
-![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
+![CyberArk Certificate Manager, Self-Hosted 17.3+ & CyberArk Certificate Manager, SaaS](https://img.shields.io/badge/Compatibility-Certificate%20Manager%2C%20Self--Hosted_2017.3%2B_%26Certificate%20Manager%2C%20SaaS-f9a90c)
 _**This open source project is community-supported.** To report a problem or share an idea, use
 **[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
 In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
@@ -10,7 +10,7 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 # CyberArk `ssh_ca` Role for Ansible
 
 This role adds SSH Certificate Authority public key retrieval capabilities to [Red Hat Ansible](https://www.ansible.com/) 
-by seamlessly integrating with the [CyberArk Certificate Manager, Self-Hosted](https://www.venafi.com/platform/trust-protection-platform)
+by seamlessly integrating with the [CyberArk Certificate Manager, Self-Hosted](https://www.cyberark.com/products/certificate-manager/)
 in a manner that ensures compliance with corporate security policy and provides visibility into certificate 
 issuance enterprise wide.
 
@@ -133,8 +133,8 @@ For more information about using roles go to https://docs.ansible.com/ansible/la
 
 ## License
 
-Copyright &copy; Venafi, Inc. All rights reserved.
+Copyright &copy; Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 
 This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
 
-Please direct questions/comments to opensource@venafi.com.
+Please direct questions/comments to mis-opensource@cyberark.com.

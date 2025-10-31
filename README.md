@@ -1,13 +1,13 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
-![Compatible with TPP 17.3+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2017.3+%20%26%20VaaS-f9a90c)  
+![CyberArk Certificate Manager, Self-Hosted 17.3+ & CyberArk Certificate Manager, SaaS](https://img.shields.io/badge/Compatibility-Certificate%20Manager%2C%20Self--Hosted_2017.3%2B_%26Certificate%20Manager%2C%20SaaS-f9a90c)  
 _To report a problem or share an idea, use **[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too. In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
 # CyberArk Collection for Ansible
 
-This collection, called `machine_identity`, uses [CyberArk Certificate Manager, Self-Hosted](https://www.venafi.com/platform/trust-protection-platform) or [CyberArk Certificate Manager, SaaS](https://www.venafi.com/venaficloud) to provide keys and certificates to Ansible solutions that require machine identity management.
+This collection, called `machine_identity`, uses [CyberArk Certificate Manager, Self-Hosted](https://www.cyberark.com/products/certificate-manager/) or [CyberArk Certificate Manager, SaaS](https://www.cyberark.com/products/certificate-manager/) to provide keys and certificates to Ansible solutions that require machine identity management.
 
 If you like this collection, please give us a rating on [Ansible Galaxy](https://galaxy.ansible.com/venafi/machine_identity).
 ## Requirements
@@ -73,8 +73,8 @@ or:
 
 ## License
 
-Copyright &copy; Venafi, Inc. All rights reserved.
+Copyright &copy; Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 
 This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE) for the full license text.
 
-Please direct questions/comments to opensource@venafi.com.
+Please direct questions/comments to mis-opensource@cyberark.com
