@@ -5,7 +5,7 @@ _To report a problem or share an idea, use **[Issues](../../issues)**; and if yo
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
-# CyberArk Collection for Ansible
+# Venafi Collection for Ansible
 
 This collection, called `machine_identity`, uses [CyberArk Certificate Manager, Self-Hosted](https://www.cyberark.com/products/certificate-manager/) or [CyberArk Certificate Manager, SaaS](https://www.cyberark.com/products/certificate-manager/) to provide keys and certificates to Ansible solutions that require machine identity management.
 

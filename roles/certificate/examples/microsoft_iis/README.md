@@ -1,4 +1,4 @@
-# Configuring secure web applications using Microsoft IIS and the CyberArk Collection for Ansible
+# Configuring secure web applications using Microsoft IIS and the Venafi Collection for Ansible
 
 In this example, we'll show you how to better secure the communication between your [Microsoft Internet Information Services](https://www.iis.net) (IIS) application and its users by using the *Venafi Collection for Ansible*.
  Adding CyberArk enables you to automate certificate management and enable the TLS protocol on your web server.
@@ -26,7 +26,7 @@ To perform the tasks described in this example, you'll need:
   - A user account that has administrative access.
 - A Linux system with:
   - Red Hat Ansible installed [as described here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html).
-  - The *CyberArk Collection for Ansible* installed using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/README.md#using-with-ansible-galaxy).
+  - The *Venafi Collection for Ansible* installed using `ansible-galaxy` [as described here](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/README.md#using-with-ansible-galaxy).
 - Access to request certificates from either **CyberArk Certificate Manager, Self-Hosted** or **CyberArk Certificate Manager, SaaS** (the `credentials.yml` [file](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/README.md#using-with-ansible-galaxy) is used in this example).
   - If you are working with **CyberArk Certificate Manager, Self-Hosted** obtain the `access_token` using the [VCert CLI](https://github.com/Venafi/vcert/blob/master/README-CLI-PLATFORM.md#obtaining-an-authorization-token).
   - Administration access to the Microsoft Windows Server Operating System.
@@ -39,7 +39,7 @@ Here are the steps we'll take as we go trough this example:
 2. Create a `hosts` file to specify the target systems and methods Ansible will use when executing tasks
 3. Create a `credentials.yml` file to specify how to connect to CyberArk
 4. Create a `iis_create_playbook.yaml` file that does the following:
-   1. Request and retrieve a certificate using the CyberArk Collection for Ansible
+   1. Request and retrieve a certificate using the Venafi Collection for Ansible
    2. Create a PKCS#12 file using the generated private key and certificate files
    3. Copy the PKCS#12 file to your Windows server machine
    4. Import the certificate to the Windows certificate store
@@ -104,7 +104,7 @@ ansible_winrm_ca_trust_path=/path-to/trust-bundle.pem
 
 ### CyberArk Credentials File
 
-The *CyberArk Collection for Ansible* requires CyberArk credentials and connection settings to be specified using a file called `credentials.yml`.  Once created we recommend applying password-based encryption to it using `ansible-vault encrypt credentials.yml`.
+The *Venafi Collection for Ansible* requires CyberArk credentials and connection settings to be specified using a file called `credentials.yml`.  Once created we recommend applying password-based encryption to it using `ansible-vault encrypt credentials.yml`.
 
 **CyberArk Certificate Manager, Self-Hosted**:
 

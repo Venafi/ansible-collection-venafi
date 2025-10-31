@@ -1,4 +1,4 @@
-# CyberArk Collection for Ansible
+# Venafi Collection for Ansible
 
 ## Version History
 
