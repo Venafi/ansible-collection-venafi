@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Venafi, Inc.
+# Copyright Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ MICROSOFT = 'MICROSOFT'
 
 def venafi_common_argument_spec():
     """
-    Returns a dict containing common options required to connect to a Venafi platform
+    Returns a dict containing common options required to connect to a CyberArk platform
     :return: dict
     """
     options = dict(
@@ -76,7 +76,7 @@ def get_venafi_connection(module, platform=None):
 
     :param ansible.module_utils.basic.AnsibleModule module:
     :param VenafiPlatform platform:
-    :return: a connection to an instance of a Venafi platform
+    :return: a connection to an instance of a CyberArk platform
     :rtype: vcert.CommonConnection
     """
     test_mode = module.params[F_TEST_MODE]

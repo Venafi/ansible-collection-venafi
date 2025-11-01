@@ -47,7 +47,7 @@
       pip:
         name:
           - vcert
-    - name: "Verify Venafi certificate on remote host"
+    - name: "Verify CyberArk certificate on remote host"
       venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"
@@ -89,7 +89,7 @@
         msg: "Certificate {{ certificate_common_name }} is not in valid state: {{ cert_validation_failed.changed_msg }}"
       when: cert_validation_failed is changed
 
-    - name: "This one shouldn't enroll new Venafi certificate on remote host because it's valid"
+    - name: "This one shouldn't enroll new CyberArk certificate on remote host because it's valid"
       venafi.machine_identity.venafi_certificate:
         url: "{{ venafi.url | default(omit) }}"
         token: "{{ venafi.token | default(omit) }}"

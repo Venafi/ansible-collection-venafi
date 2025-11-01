@@ -5,7 +5,7 @@
 ##### 1.1.1
 * Required changes to upload the version 1.1.0 in RedHat Ansible Automation Platform. There is not any change in the functionality.
 ##### 1.1.0
-* Added support for TPP 25.1 and above
+* Added support for CyberArk Certificate Manager, Self-Hosted 25.1 and above
 ##### 1.0.3
 * Updates vcert dependency to v0.17.0 to fix a mismatch between requirements.txt and setup.py dependencies that impacted the collection
 #### 1.0.2
@@ -28,7 +28,7 @@
 #### 0.8.1
  * Fixed an issue in `local-certificate.yaml` task where certain expressions failed when `use_pkcs12_format` var is not defined
 #### 0.8.0
- * Added support for service generated CSR on VaaS
+ * Added support for service generated CSR on CyberArk Certificate Manager, SaaS
  * Fixed issue with SANs validation when no SAN has been provided
  * Fixed issue when an empty private key file was being created on invalid scenarios
 #### 0.7.5
@@ -37,16 +37,16 @@
  * Fixed issues with doc-string and custom fields description
  * Added version history to README.md
 #### 0.7.3
- * Added support for Service Generated CSR (contribution by @Kerrida) on TPP
+ * Added support for Service Generated CSR (contribution by @Kerrida) on CyberArk Certificate Manager, Self-Hosted
  * Added support for PKCS12 output format for certificates
  * Added support for flexible validity periods when requesting a certificate
  * Added support for custom fields when requesting a certificate
 #### 0.7.2
- * Minor fixes to SSH certificates on TPP
+ * Minor fixes to SSH certificates on CyberArk Certificate Manager, Self-Hosted
 #### 0.7.1
  * Cleaned linter warnings on the collection
 #### 0.7.0
- * Added support for SSH certificates (request, retrieve) on TPP
+ * Added support for SSH certificates (request, retrieve) on CyberArk Certificate Manager, Self-Hosted
 #### 0.6.0
- * Migrated from Venafi Ansible role to Machine Identity collection
- * Added support for Policy Management on TPP and VaaS
+ * Migrated from CyberArk Ansible role to Machine Identity collection
+ * Added support for Policy Management on CyberArk Certificate Manager, Self-Hosted and CyberArk Certificate Manager, SaaS

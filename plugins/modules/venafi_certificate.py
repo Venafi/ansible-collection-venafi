@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2019 Venafi, Inc.
+# Copyright Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ __metaclass__ = type
 DOCUMENTATION = '''
 ---
 module: venafi_certificate
-short_description: Venafi certificate module for working with Venafi as a Service or Venafi Trust Protection Platform
+short_description: CyberArk certificate module for working with CyberArk Certificate Manager, SaaS or CyberArk Certificate Manager, Self-Hosted
 description:
-    - Venafi certificate module for working with Venafi as a Service (VaaS) or Trust Protection Platform (TPP).
+    - CyberArk certificate module for working with CyberArk Certificate Manager, SaaS or CyberArk Certificate Manager, Self-Hosted.
 version_added: "0.6.0"
 author: Alexander Rykalin (@arykalin)
 options:
@@ -73,7 +73,7 @@ options:
             - Indicates the source of the CSR used for a certificate request.
             - C(provided) - The CSR at I(csr_path) will be used to request a new certificate.
             - C(local) - The CSR will be generated locally using the values provided through I(privatekey_x) fields.
-            - C(service) - The CSR will be generated on the service side (TPP or VaaS).
+            - C(service) - The CSR will be generated on the service side (CyberArk Certificate Manager, Self-Hosted or CyberArk Certificate Manager, SaaS).
         required: false
         default: local
         choices:
@@ -95,8 +95,8 @@ options:
         type: dict
     issuer_hint:
         description:
-            - Issuer of the certificate. Ignored when platform is not TPP.
-            - Use in combination with I(validity_hours) to specify the validity period of a certificate on TPP.
+            - Issuer of the certificate. Ignored when platform is not CyberArk Certificate Manager, Self-Hosted.
+            - Use in combination with I(validity_hours) to specify the validity period of a certificate on CyberArk Certificate Manager, Self-Hosted.
         default: DEFAULT
         choices:
             - DEFAULT
@@ -160,7 +160,7 @@ options:
     validity_hours:
         description:
             - Indicates the validity period of the certificate before it expires.
-            - When the platform is TPP, an issuer can be defined as well. See I(issuer_hint).
+            - When the platform is CyberArk Certificate Manager, Self-Hosted, an issuer can be defined as well. See I(issuer_hint).
         required: false
         default: null
         type: int

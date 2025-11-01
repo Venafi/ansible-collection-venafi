@@ -1,8 +1,8 @@
 ---
 galaxy_info:
   author: Russel Vela (@rvelaVenafi)
-  description: SSH Certificate Authority configuration retrieval from Venafi solutions.
-  company: Venafi, Inc.
+  description: SSH Certificate Authority configuration retrieval from CyberArk solutions.
+  company: CyberArk, Inc.
 
   license: Apache License 2.0
 
@@ -50,6 +50,7 @@ galaxy_info:
     - 'ssh'
     - 'security'
     - 'venafi'
+    - 'cyberark'
     - 'certificateauthority'
     - 'ca'
 
