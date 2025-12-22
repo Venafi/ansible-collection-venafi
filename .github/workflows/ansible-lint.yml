@@ -7,5 +7,7 @@ jobs:
     name: Ansible Lint
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Run ansible-lint
         uses: ansible/ansible-lint@main  # or version tag instead of 'main'
