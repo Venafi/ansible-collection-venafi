@@ -13,10 +13,24 @@ If you like this collection, please give us a rating on [Ansible Galaxy](https:/
 ## Requirements
 
 Review the [CyberArk](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
-prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
+prerequisites, and depending on the source:
+
+### Ansible Automation Platform
+
+- Install [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
+
+```sh
+pip install vcert --upgrade
+```
+
+### Ansible Galaxy
+
+- Install both Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
+
 ```sh
 pip install ansible vcert --upgrade
 ```
+
 <!-- TODO: clarify the different requirements for CyberArk Certificate Manager, Self-Hosted and CyberArk Certificate Manager, SaaS -->
 
 ## Python version compatibility
@@ -70,6 +84,15 @@ or:
 ## Version History
 
 [Check version history here](https://github.com/Venafi/ansible-collection-venafi/blob/main/docs/version_history.md)
+
+## Support
+
+Only the latest release of this collection is supported.
+
+As Red Hat Ansible Certified Content, this collection is entitled to support through the Ansible Automation Platform (AAP) using 
+the Create issue button in the top right corner. If a support case cannot be opened with Red Hat and the collection has been obtained 
+either from Galaxy or GitHub, you can raise a GitHub Issue directly with the developers [here](https://github.com/Venafi/ansible-collection-venafi/issues)
+or get community help available on the [Ansible Forum](https://forum.ansible.com/).
 
 ## License
 

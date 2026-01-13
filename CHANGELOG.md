@@ -2,6 +2,9 @@
 
 ## Version History
 
+##### 1.1.2
+* Required changes to upload the version 1.1.2 in RedHat Ansible Automation Platform for rebranding.
+* Also includes fix for issue that would trigger when "csr_path" is not defined in playbook.
 ##### 1.1.1
 * Required changes to upload the version 1.1.0 in RedHat Ansible Automation Platform. There is not any change in the functionality.
 ##### 1.1.0
