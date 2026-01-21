@@ -1,7 +1,7 @@
 ---
 credentials_file: credentials.yml
-# Use Ansible host FQDN for certificate common name
-certificate_common_name: "{{ ansible_fqdn }}"
+# Use Ansible host FQDN for certificate common name or fall back to inventory_hostname if not available, such as `gather_facts: false`
+certificate_common_name: "{{ ansible_fqdn | default(inventory_hostname) }}"
 
 # Directory where to place certificates
 certificate_cert_dir: "/etc/ssl/{{ certificate_common_name }}"
