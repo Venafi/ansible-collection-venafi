@@ -30,6 +30,7 @@ roles/certificate/examples/microsoft_iis/iis_create_playbook.yaml yaml[document-
 roles/certificate/examples/microsoft_iis/iis_create_playbook.yaml yaml[trailing-spaces]
 roles/certificate/examples/microsoft_iis/iis_create_playbook.yaml yaml[truthy]
 roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml deprecated-local-action
+roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml syntax-check[unknown-module]
 roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml fqcn[action-core]
 roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml fqcn[action]
 roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml jinja[spacing]
