@@ -422,7 +422,9 @@ class VSSHCertificate:
         if private_key_data:
             if not self.windows_cert:
                 private_key_data = private_key_data.replace("\r\n", "\n")
-            with open(self.private_key_filename, "wb") as private_key_file:
+            fd = os.open(self.private_key_filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "wb") as private_key_file:
+                os.fchmod(fd, 0o600)
                 private_key_file.write(private_key_data.encode())
                 self.private_key_changed = True
 

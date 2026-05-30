@@ -277,6 +277,7 @@ chain_filename:
 '''
 
 import datetime
+import os
 import os.path
 import random
 
@@ -531,7 +532,8 @@ class VCertificate:
     def _atomic_write(self, path, content):
         suffix = ".atomic_%s" % random.randint(100, 100000)
         try:
-            with open(path + suffix, "wb") as f:
+            fd = os.open(path + suffix, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "wb") as f:
                 f.write(to_bytes(content))
         except OSError as e:
             self.module.fail_json(msg="Failed to write file %s: %s" % (
@@ -544,6 +546,10 @@ class VCertificate:
     def _check_and_update_permissions(self, path):
         file_args = self.module.load_file_common_arguments(self.module.params)
         file_args['path'] = path
+        # Default to mode 0600 for private keys and PKCS#12 files
+        if file_args.get('mode') is None:
+            if path == self.privatekey_filename or (self.use_pkcs12 and path == self.certificate_filename):
+                file_args['mode'] = '0600'
         if self.module.set_fs_attributes_if_different(file_args, False):
             self.changed = True
 
@@ -671,7 +677,15 @@ class VCertificate:
         return all(self._check_file_permissions(x) for x in files)
 
     def _check_file_permissions(self, path, update=False):
-        return True  # todo: write
+        if not path or not os.path.exists(path):
+            return True
+        # Check that private keys and PKCS#12 files have secure permissions (0600)
+        if path == self.privatekey_filename or (self.use_pkcs12 and path == self.certificate_filename):
+            st = os.stat(path)
+            # Ensure no group or other permissions (check bits 077)
+            if (st.st_mode & 0o077) != 0:
+                return False
+        return True
 
     def check(self, validate):
         """Return true if running will change anything"""
