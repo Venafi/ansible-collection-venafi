@@ -1,10 +1,10 @@
 ---
 credentials_file: credentials.yml
 # Use Ansible host FQDN for certificate common name
-certificate_common_name: "{{ ansible_fqdn }}"
+certificate_common_name: "{{ inventory_hostname }}"
 
 # Directory where to place certificates
-certificate_cert_dir: "/etc/ssl/{{ certificate_common_name }}"
+certificate_cert_dir: "/etc/ssl/{{ certificate_common_name | basename }}"
 # Paths for certificate and keys
 certificate_cert_path: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.pem"
 certificate_cert_path_pkcs12: "{{ certificate_cert_dir }}/{{ certificate_common_name }}.p12"
