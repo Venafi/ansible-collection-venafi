@@ -1,6 +1,7 @@
 # Retrieves Certificate Authority configuration
 ---
 - name: "Retrieve CA public key on remote host"
+  no_log: true
   venafi.machine_identity.venafi_ssh_ca:
     url: "{{ venafi.url | default(omit) }}"
     test_mode: "{{ venafi.test_mode if venafi.test_mode is defined else 'false' }}"
