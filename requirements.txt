@@ -1,2 +1,7 @@
-vcert>=0.18.0
-cryptography>=42.0.2
+# vcert>=0.18.1: versions <0.17.0 transitively depended on the unmaintained
+# certvalidator (CWE-1104, SC-RISK-001) and oscrypto (SC-RISK-002) packages.
+# vcert 0.17.0+ removed that dependency chain. Pinned to >=0.18.1 (latest
+# confirmed-clean release) so supply-chain scans no longer flag those deps.
+vcert>=0.18.1
+# cryptography floor raised to match vcert 0.18.1's own requirement.
+cryptography>=45.0.7
