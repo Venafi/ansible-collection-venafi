@@ -12,3 +12,6 @@ tests/roles/
 *.retry
 .cache
 .DS_Store
+__pycache__/
+*.pyc
+*.pyo

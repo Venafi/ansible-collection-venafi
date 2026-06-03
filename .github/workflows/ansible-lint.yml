@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       - name: Run ansible-lint
-        uses: ansible/ansible-lint@main  # or version tag instead of 'main'
+        uses: ansible/ansible-lint@501adc7a2d60b922528db1a2ae445feb2057c76d  # v6.9.1
