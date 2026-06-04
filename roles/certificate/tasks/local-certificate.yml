@@ -55,7 +55,7 @@
   ansible.builtin.copy:
     src: "{{ certificate_cert_path_pkcs12 }}"
     dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
-    mode: 0644
+    mode: 0600
   when: certificate_pkcs12_format
 
 - name: "Copy CyberArk private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
