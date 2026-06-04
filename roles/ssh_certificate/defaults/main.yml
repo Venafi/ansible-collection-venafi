@@ -12,6 +12,10 @@ ssh_private_key_path: "{{ ssh_cert_dir }}/{{ ssh_key_id }}"
 
 # Where to execute venafi_certificate module. If set to false, certificate will be
 # created on ansible master host and then copied to the remote server
+# WARNING: Setting ssh_remote_execution to true transmits your Venafi credentials
+# (url, user, password, access_token) to every managed host in the inventory.
+# If any host is compromised, the attacker can obtain a zone-wide credential that can
+# request certificates for any name the Venafi zone allows. Use only in trusted environments.
 ssh_remote_execution: false
 # Remote location where to place the certificate
 ssh_remote_cert_path: "{{ ssh_cert_dir }}/{{ ssh_key_id }}-cert.pub"

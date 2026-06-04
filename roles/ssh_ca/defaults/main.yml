@@ -9,6 +9,10 @@ ssh_ca_public_key_path: "{{ ssh_ca_dir }}/{{ ssh_ca_public_key_filename }}.pub"
 
 # Where to execute venafi_ssh_ca module. If set to false, Certificate Authority public key
 # will be created on ansible master host and then copied to the remote server
+# WARNING: Setting ssh_ca_remote_execution to true transmits your Venafi credentials
+# (url, user, password, access_token, token) to every managed host in the inventory.
+# If any host is compromised, the attacker can obtain a zone-wide credential that can
+# request certificates for any name the Venafi zone allows. Use only in trusted environments.
 ssh_ca_remote_execution: false
 # Remote location where to place the Certificate Authority public key
 ssh_ca_remote_public_key_path: "{{ ssh_ca_dir }}/{{ ssh_ca_public_key_filename }}.pub"

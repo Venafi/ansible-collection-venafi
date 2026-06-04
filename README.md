@@ -81,6 +81,19 @@ or:
 - [`venafi.machine_identity.ssh_certificate`](roles/ssh_certificate/README.md): Enrolls an SSH certificate using CyberArk Certificate Manager, Self-Hosted.
 - [`venafi.machine_identity.ssh_ca`](roles/ssh_ca/README.md): Retrieves public keys of SSH certificate authorities hosted by CyberArk Certificate Manager, Self-Hosted.
 
+## Security Considerations
+
+### Remote Execution Mode
+
+**WARNING**: The `certificate_remote_execution`, `ssh_remote_execution`, and `ssh_ca_remote_execution` options are disabled by default for security reasons. When enabled, these options cause Ansible to transmit your Venafi platform credentials (url, user, password, access_token, token) to every managed host in your inventory. These credentials are **not** scoped to individual hosts—they can request certificates for any name allowed by the Venafi zone.
+
+**Risk**: If any managed host is compromised, an attacker can extract these zone-wide credentials from temporary files and use them to request trusted certificates for all servers in your infrastructure.
+
+**Recommendations**:
+- Only enable remote execution in highly trusted environments where all managed hosts are secured to the same level as your Ansible controller.
+- Consider using the default local execution mode (`*_remote_execution: false`), which keeps credentials on the Ansible controller and only copies certificate artifacts to managed hosts.
+- If remote execution is required, implement additional controls such as per-host credentials with narrowly-scoped policies.
+
 ## Version History
 
 [Check version history here](https://github.com/Venafi/ansible-collection-venafi/blob/main/docs/version_history.md)
