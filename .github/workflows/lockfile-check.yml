@@ -1,3 +1,4 @@
+---
 name: lockfile-sync
 on:
   pull_request:
