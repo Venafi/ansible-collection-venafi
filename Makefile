@@ -90,3 +90,16 @@ install:
 
 uninstall:
 	rm -rf ~/.ansible/collections/ansible_collections/venafi
+
+# Regenerate requirements.txt from requirements.in using pip-compile.
+# Uses python:3.9 to match the CI target version so resolutions are reproducible.
+# pip-tools is pinned so hash output is stable across contributors.
+# chown at the end so the regenerated file is owned by the host user, not
+# root, on Linux hosts (no-op on macOS where Docker Desktop maps ownership).
+lock:
+	docker run --rm -v "$(CURDIR)":/work -w /work python:3.9 \
+	  sh -c "pip install 'pip-tools==7.4.1' && \
+	         pip-compile --generate-hashes --output-file=requirements.txt requirements.in && \
+	         chown $$(id -u):$$(id -g) requirements.txt"
+
+.PHONY: lock

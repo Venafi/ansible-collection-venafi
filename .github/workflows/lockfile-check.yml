@@ -1,0 +1,22 @@
+name: lockfile-sync
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  sync:
+    name: requirements.txt in sync with requirements.in
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate lockfile
+        run: make lock
+      - name: Compare with committed lockfile
+        run: |
+          if ! git diff --exit-code -- requirements.txt; then
+            echo "::error::requirements.txt is out of sync with requirements.in." \
+                 "Run 'make lock' locally and commit the updated requirements.txt."
+            exit 1
+          fi
