@@ -17,7 +17,7 @@ prerequisites, and depending on the source:
 
 ### Ansible Automation Platform
 
-- Install [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
+- Install [VCert-Python](https://github.com/Venafi/vcert-python) (v0.18.0 or higher) using `pip`:
 
 ```sh
 pip install vcert --upgrade
@@ -25,7 +25,7 @@ pip install vcert --upgrade
 
 ### Ansible Galaxy
 
-- Install both Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
+- Install both Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.18.0 or higher) using `pip`:
 
 ```sh
 pip install ansible vcert --upgrade
@@ -66,7 +66,11 @@ collections:
 The python module dependencies are not installed by `ansible-galaxy`.  They can
 be manually installed using pip:
 
-    pip install -r requirements.txt
+    pip install --require-hashes -r requirements.txt
+
+`requirements.txt` is a generated lockfile. Do not edit it directly. To change
+or upgrade a dependency, edit `requirements.in` and run `make lock` (requires
+Docker) to regenerate it.
 
 or:
 
