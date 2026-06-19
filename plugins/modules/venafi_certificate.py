@@ -167,6 +167,9 @@ options:
     zone:
         description:
             - The location of the certificate on the Venafi platform.
+            - For CyberArk Certificate Manager, Self-Hosted this is a policy folder DN (e.g. C(example\\policy)).
+            - For CyberArk Certificate Manager, SaaS this is C(ApplicationName\\IssuingTemplateAlias).
+            - For NGTS (Strata Cloud Manager) this is the Certificate Issuing Template alias only.
         required: true
         type: str
 extends_documentation_fragment:
@@ -232,6 +235,29 @@ EXAMPLES = '''
       zone: 'Default'
       cert_path: '/tmp'
       common_name: 'testcert-cloud.example.com'
+    register: certout
+  - name: dump test output
+    debug:
+      msg: '{{ certout }}'
+
+# Enroll NGTS (Strata Cloud Manager) certificate
+- name: venafi_certificate_ngts
+  connection: local
+  hosts: localhost
+  tags:
+    - ngts
+  tasks:
+  - name: venafi_certificate
+    venafi_certificate:
+      # url and token_url are optional; omit them to use the Palo Alto production endpoints,
+      # set them for non-production environments.
+      client_id: 'svc-account@1234567890.iam.panserviceaccount.com'
+      client_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+      tsg_id: '1234567890'
+      zone: 'my-issuing-template'
+      cert_path: '/tmp'
+      common_name: 'testcert-ngts.example.com'
     register: certout
   - name: dump test output
     debug:
@@ -584,32 +610,37 @@ class VCertificate:
                 % (cn, self.common_name)
             )
             return False
+        # cryptography's not_valid_after/before are deprecated for the timezone-aware
+        # _utc variants. Use those and compare against an aware UTC "now" so the comparison
+        # is correct regardless of the controller's local timezone (the naive properties
+        # return UTC, but datetime.now() is local).
+        not_valid_after = cert.not_valid_after_utc
+        not_valid_before = cert.not_valid_before_utc
+        now = datetime.datetime.now(datetime.timezone.utc)
         # Check if certificate not already expired
-        if cert.not_valid_after < datetime.datetime.now():
+        if not_valid_after < now:
             self.changed_message.append(
                 'Certificate expiration date %s '
                 'is less than current time %s (certificate expired)'
-                % (cert.not_valid_after, self.before_expired_hours)
+                % (not_valid_after, self.before_expired_hours)
             )
             return False
         # Check if certificate expiring time is greater than
         # before_expired_hours (only for creating new certificate)
         if not validate:
-            if cert.not_valid_after - datetime.timedelta(
-                    hours=self.before_expired_hours) < datetime.datetime.now():
+            if not_valid_after - datetime.timedelta(
+                    hours=self.before_expired_hours) < now:
                 self.changed_message.append(
                     'Hours before certificate expiration date %s '
                     'is less than before_expired_hours value %s'
-                    % (cert.not_valid_after, self.before_expired_hours)
+                    % (not_valid_after, self.before_expired_hours)
                 )
                 return False
-        if cert.not_valid_before - datetime.timedelta(
-                hours=24) > datetime.datetime.now():
+        if not_valid_before - datetime.timedelta(hours=24) > now:
             self.changed_message.append(
                 "Certificate expiration date %s "
                 "is set to future from server time %s."
-                % (cert.not_valid_before - datetime.timedelta(hours=24),
-                   (datetime.datetime.now()))
+                % (not_valid_before - datetime.timedelta(hours=24), now)
             )
             return False
         ips = []

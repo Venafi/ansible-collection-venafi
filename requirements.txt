@@ -373,7 +373,7 @@ urllib3==2.6.3 \
     --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
     --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
     # via requests
-vcert==0.18.1 \
-    --hash=sha256:3c75dffed19c23bfce9e9a821ceea6e4ad8585d7dddfcba03baf1ad38c62c3ec \
-    --hash=sha256:56478760c799b79971743da748f855ca14ce7cb890958e5b2e5e681ca09cc2dc
+vcert==0.19.0 \
+    --hash=sha256:2b0a09bc07b10988d6d93895732b9a716ca489ec31808cc8fad45909c70ed787 \
+    --hash=sha256:4c161086f42ba00f3403fc39cfafeba78c31adca13286f35a105a6425c848eeb
     # via -r requirements.in

@@ -229,10 +229,10 @@ import os
 from ansible.module_utils.basic import AnsibleModule
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, fail_if_ngts
 except ImportError:
     from plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, fail_if_ngts
 
 HAS_VCERT = True
 try:
@@ -278,6 +278,7 @@ class VSSHCertificate:
         :param AnsibleModule module:
         """
         self.module = module  # type: AnsibleModule
+        fail_if_ngts(module, "SSH certificate management")
         self.connection = get_venafi_connection(module)  # type: CommonConnection
         self.state = module.params[F_STATE]  # type: str
         self.force = module.params[F_FORCE]  # type: bool

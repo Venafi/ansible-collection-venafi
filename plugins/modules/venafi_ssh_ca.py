@@ -120,11 +120,11 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, F_STATE, F_FORCE, \
-        F_STATE_PRESENT, F_STATE_ABSENT
+        F_STATE_PRESENT, F_STATE_ABSENT, fail_if_ngts
 except ImportError:
     from plugins.module_utils.common_utils \
         import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, F_STATE, F_FORCE, \
-        F_STATE_PRESENT, F_STATE_ABSENT
+        F_STATE_PRESENT, F_STATE_ABSENT, fail_if_ngts
 
 HAS_VCERT = True
 try:
@@ -151,6 +151,7 @@ class VSSHCertAuthority:
         :param AnsibleModule module:
         """
         self.module = module  # type: AnsibleModule
+        fail_if_ngts(module, "SSH CA management")
         self.connector = get_venafi_connection(module, platform=VenafiPlatform.TPP)  # type: CommonConnection
         self.state = module.params[F_STATE]  # type: str
         self.force = module.params[F_FORCE]  # type: bool

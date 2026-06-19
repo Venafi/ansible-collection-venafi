@@ -2,6 +2,11 @@
 
 ## Version History
 
+##### 1.2.0
+* Bumped the `vcert` dependency to `vcert>=0.19.0` in `requirements.in` and regenerated the hash-pinned `requirements.txt` lockfile (`vcert==0.19.0`). `vcert` 0.19.0 adds NGTS support and delivers security fixes — sensitive data redacted from debug logs (CWE-532), safe YAML loading in the policy parser (CWE-502), and TLS verification enabled by default with a warning when disabled (CWE-295). These are backward compatible: the collection already passes `verify` only when a `trust_bundle` is supplied (otherwise `requests`' default of verified TLS applies) and uses plain-data policy specs.
+* Added support for NGTS (Strata Cloud Manager) certificate enrollment and renewal in the `venafi_certificate` module and `certificate` role. NGTS is selected by supplying the OAuth2 service-account credentials (`client_id`, `client_secret`, and `tsg_id` or `scope`); `url` and `token_url` are optional and default to the Palo Alto production endpoints.
+* NGTS supports certificate operations only. The `venafi_policy`, `venafi_ssh_certificate`, and `venafi_ssh_ca` modules fail fast with a clear message when NGTS credentials are supplied.
+
 ##### 1.1.2
 * Required changes to upload the version 1.1.2 in RedHat Ansible Automation Platform for rebranding.
 * Also includes fix for issue that would trigger when "csr_path" is not defined in playbook.

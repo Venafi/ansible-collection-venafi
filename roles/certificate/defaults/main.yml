@@ -17,7 +17,8 @@ certificate_pkcs12_format: false
 # Where to execute venafi_certificate module. If set to false, certificate will be
 # created on ansible master host and then copied to the remote server
 # WARNING: Setting certificate_remote_execution to true transmits your Venafi credentials
-# (url, user, password, access_token, token) to every managed host in the inventory.
+# (url, user, password, access_token, token, client_id, client_secret, token_url, tsg_id)
+# to every managed host in the inventory.
 # If any host is compromised, the attacker can obtain a zone-wide credential that can
 # request certificates for any name the Venafi zone allows. Use only in trusted environments.
 certificate_remote_execution: false

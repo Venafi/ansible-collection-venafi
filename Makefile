@@ -82,7 +82,7 @@ ansible-molecule:
 #	--extra-vars "credentials_file=fake_credentials.yml docker_demo=true"
 
 unit-test:
-	PYTHONPATH=./:$PYTHONPATH pytest ./tests/certificate/test_venafi_certificate.py
+	PYTHONPATH=./:$PYTHONPATH pytest ./tests/certificate/test_venafi_certificate.py ./tests/common_utils/test_common_utils.py
 
 install:
 	ansible-galaxy collection build --force

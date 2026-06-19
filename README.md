@@ -80,7 +80,7 @@ or:
 
 ### Roles
 
-- [`venafi.machine_identity.certificate`](roles/certificate/README.md): Enrolls a certificate and optionally deploys it to a remote location.
+- [`venafi.machine_identity.certificate`](roles/certificate/README.md): Enrolls a certificate from CyberArk Certificate Manager Self-Hosted, SaaS, or NGTS (Strata Cloud Manager) and optionally deploys it to a remote location.
 - [`venafi.machine_identity.policy`](roles/policy/README.md): Creates or updates certificate policy on CyberArk Certificate Manager, SaaS or CyberArk Certificate Manager, Self-Hosted using a specification file.
 - [`venafi.machine_identity.ssh_certificate`](roles/ssh_certificate/README.md): Enrolls an SSH certificate using CyberArk Certificate Manager, Self-Hosted.
 - [`venafi.machine_identity.ssh_ca`](roles/ssh_ca/README.md): Retrieves public keys of SSH certificate authorities hosted by CyberArk Certificate Manager, Self-Hosted.
@@ -89,7 +89,7 @@ or:
 
 ### Remote Execution Mode
 
-**WARNING**: The `certificate_remote_execution`, `ssh_remote_execution`, and `ssh_ca_remote_execution` options are disabled by default for security reasons. When enabled, these options cause Ansible to transmit your Venafi platform credentials (url, user, password, access_token, token) to every managed host in your inventory. These credentials are **not** scoped to individual hosts—they can request certificates for any name allowed by the Venafi zone.
+**WARNING**: The `certificate_remote_execution`, `ssh_remote_execution`, and `ssh_ca_remote_execution` options are disabled by default for security reasons. When enabled, these options cause Ansible to transmit your Venafi platform credentials (url, user, password, access_token, token, and the NGTS service-account credentials client_id, client_secret, token_url, tsg_id) to every managed host in your inventory. These credentials are **not** scoped to individual hosts—they can request certificates for any name allowed by the Venafi zone.
 
 **Risk**: If any managed host is compromised, an attacker can extract these zone-wide credentials from temporary files and use them to request trusted certificates for all servers in your infrastructure.
 

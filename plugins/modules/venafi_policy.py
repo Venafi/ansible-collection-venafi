@@ -81,10 +81,10 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
 try:
     from ansible_collections.venafi.machine_identity.plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, fail_if_ngts
 except ImportError:
     from plugins.module_utils.common_utils \
-        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec
+        import get_venafi_connection, module_common_argument_spec, venafi_common_argument_spec, fail_if_ngts
 
 HAS_VCERT = True
 try:
@@ -110,6 +110,7 @@ class VPolicyManagement:
         :param AnsibleModule module: The module containing the necessary parameters to perform the operations
         """
         self.module = module
+        fail_if_ngts(module, "policy management")
         self.state = module.params[F_STATE]
         self.force = module.params[F_FORCE]
         self.zone = module.params[F_ZONE]
