@@ -177,65 +177,65 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 # Enroll fake certificate for testing purposes
-- name: venafi_certificate_fake
+- name: Enrolling a fake certificate
   connection: local
   hosts: localhost
   tags:
     - fake
   tasks:
-  - name: venafi_certificate
-    venafi_certificate:
-      test_mode: true
-      common_name: 'testcert-fake-{{ 99999999 | random }}.example.com'
-      alt_name: 'DNS:www.venafi.example,DNS:m.venafi.example'
-      cert_path: '/tmp'
-    register: certout
-  - name: dump test output
-    debug:
-      msg: '{{ certout }}'
+    - name: Venafi Certificate Fake
+      venafi_certificate:
+        test_mode: true
+        common_name: 'testcert-fake-{{ 99999999 | random }}.example.com'
+        alt_name: 'DNS:www.venafi.example,DNS:m.venafi.example'
+        cert_path: '/tmp'
+      register: certout
+    - name: Dump test output
+      ansible.builtin.debug:
+        msg: '{{ certout }}'
 
 # Enroll Platform certificate with a lot of alt names
-- name: venafi_certificate_tpp
+- name: Enrolling a Platform certificate
   connection: local
   hosts: localhost
   tags:
     - tpp
   tasks:
-  - name: venafi_certificate
-    venafi_certificate:
-      url: 'https://venafi.example.com/vedsdk'
-      user: 'admin'
-      password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-      zone: 'example\\\\policy'
-      cert_path: '/tmp'
-      common_name: 'testcert-tpp-{{ 99999999 | random }}.example.com'
-      alt_name: |
-        IP:192.168.1.1,DNS:www.venafi.example.com,
-        DNS:m.venafi.example.com,email:test@venafi.com,IP Address:192.168.2.2
-    register: certout
-  - name: dump test output
-    debug:
-      msg: '{{ certout }}'
+    - name: Create a Venafi Certificate
+      venafi_certificate:
+        url: 'https://venafi.example.com/vedsdk'
+        user: 'admin'
+        password: !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+        zone: 'example\\\\policy'
+        cert_path: '/tmp'
+        common_name: 'testcert-tpp-{{ 99999999 | random }}.example.com'
+        alt_name: |
+          IP:192.168.1.1,DNS:www.venafi.example.com,
+          DNS:m.venafi.example.com,email:test@venafi.com,IP Address:192.168.2.2
+      register: certout
+    - name: Dump test output
+      ansible.builtin.debug:
+        msg: '{{ certout }}'
 
 # Enroll Cloud certificate
-- name: venafi_certificate_cloud
+- name: Enrolling a Cloud Certificate
   connection: local
   hosts: localhost
   tags:
     - cloud
   tasks:
-  - name: venafi_certificate
-    venafi_certificate:
-      token: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-      zone: 'Default'
-      cert_path: '/tmp'
-      common_name: 'testcert-cloud.example.com'
-    register: certout
-  - name: dump test output
-    debug:
-      msg: '{{ certout }}'
+    - name: Create a Venafi Certificate
+      venafi_certificate:
+        token: !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+        zone: 'Default'
+        cert_path: '/tmp'
+        common_name: 'testcert-cloud.example.com'
+      register: certout
+    - name: Dump test output
+      ansible.builtin.debug:
+        msg: '{{ certout }}'
 '''
 
 RETURN = '''

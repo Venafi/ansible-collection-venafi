@@ -1,3 +1,4 @@
+---
 name: ansible-test sanity
 on:
   pull_request:
@@ -14,10 +15,10 @@ jobs:
     strategy:
       matrix:
         ansible:
-        - stable-2.13
-        - stable-2.14
-        - stable-2.15
-        # - devel
+          - stable-2.13
+          - stable-2.14
+          - stable-2.15
+          # - devel
     runs-on: ubuntu-latest
     steps:
       - name: Perform testing
