@@ -30,6 +30,8 @@ options:
             - The url of the CyberArk platform to connect to.
             - B(Required) for CyberArk Certificate Manager, Self-Hosted.
             - Optional for CyberArk Certificate Manager, SaaS. Only set the url when trying to reach a custom CyberArk Certificate Manager, SaaS platform (dev, QA, staging, etc.).
+            - Optional for NGTS (Strata Cloud Manager). When omitted it defaults to the Palo Alto production endpoint.
+            - For NGTS, set the url only for non-production environments.
         default: null
         type: str
 
@@ -69,6 +71,48 @@ options:
         description:
             - the path to a PEM file to be used as trust anchor when communicating with CyberArk Certificate Manager, Self-Hosted.
             - Ignored for CyberArk Certificate Manager, SaaS.
+        default: null
+        type: str
+
+    client_id:
+        description:
+            - The OAuth2 service-account client id used to authenticate at NGTS (Strata Cloud Manager).
+            - Required for NGTS. Supplying I(client_id) together with I(client_secret) selects the NGTS connection.
+            - Ignored for CyberArk Certificate Manager, Self-Hosted and SaaS.
+        default: null
+        type: str
+
+    client_secret:
+        description:
+            - The OAuth2 service-account client secret used to authenticate at NGTS (Strata Cloud Manager).
+            - Required for NGTS.
+            - Ignored for CyberArk Certificate Manager, Self-Hosted and SaaS.
+        default: null
+        type: str
+
+    token_url:
+        description:
+            - The OAuth2 token endpoint for NGTS (Strata Cloud Manager).
+            - Optional for NGTS. When omitted it defaults to the Palo Alto production endpoint.
+            - For NGTS, set the token_url only for non-production environments.
+            - Ignored for CyberArk Certificate Manager, Self-Hosted and SaaS.
+        default: null
+        type: str
+
+    tsg_id:
+        description:
+            - The NGTS (Strata Cloud Manager) tenant service group id.
+            - Provide I(tsg_id) or I(scope) for NGTS.
+            - When only I(tsg_id) is given the scope is derived as C(tsg_id:<TSG_ID>).
+            - Ignored for CyberArk Certificate Manager, Self-Hosted and SaaS.
+        default: null
+        type: str
+
+    scope:
+        description:
+            - The NGTS (Strata Cloud Manager) OAuth2 scope, in the form C(tsg_id:<TSG_ID>).
+            - Provide I(scope) or I(tsg_id) for NGTS.
+            - Ignored for CyberArk Certificate Manager, Self-Hosted and SaaS.
         default: null
         type: str
 '''

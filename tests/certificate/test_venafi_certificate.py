@@ -63,6 +63,12 @@ def create_testfiles(asset):
 
         shutil.copy(CURRENT_DIR + "/assets/" + v, p)
 
+    # shutil.copy preserves the source mode, and git cannot track 0600, so the committed
+    # key fixtures arrive group/world-readable on a fresh clone. The module enforces 0600
+    # for private keys (_check_file_permissions), so mirror how a real key is written on
+    # disk to keep this test deterministic across checkouts.
+    os.chmod(PRIV_PATH, 0o600)
+
 
 TEST_ASSETS = [
     # TODO check error message, not just valid\invalid

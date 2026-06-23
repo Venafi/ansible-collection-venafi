@@ -116,18 +116,50 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    EOF
    ```
 
+   **NGTS (Strata Cloud Manager)** — production (omit `url` and `token_url` to use the Palo Alto production endpoints):
+
+   ```sh
+   cat <<EOF >>credentials.yml
+   client_id: 'svc-account@1234567890.iam.panserviceaccount.com'
+   client_secret: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+   tsg_id: '1234567890'
+   zone: 'my-issuing-template'
+   EOF
+   ```
+
+   **NGTS (Strata Cloud Manager)** — non-production (set both `url` and the environment's `token_url`):
+
+   ```sh
+   cat <<EOF >>credentials.yml
+   url: 'https://dev.api.sase.paloaltonetworks.com/ngts'
+   token_url: 'https://auth.dev.appsvc.paloaltonetworks.com/auth/v1/oauth2/access_token'
+   client_id: 'svc-account@1234567890.iam.panserviceaccount.com'
+   client_secret: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+   tsg_id: '1234567890'
+   zone: 'my-issuing-template'
+   EOF
+   ```
+
+   > NGTS supports certificate operations only (enroll/renew). Policy management and SSH are not available for NGTS.
+   > The `tsg_id` (or the TSG ID inside `scope`) must be a 10-digit integer.
+
    The certificate role supports the following connection and credential settings:
    
    | Variable Name  | Description                                                                                                                                                                                |
    | -------------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
    | `access_token` | CyberArk Certificate Manager, Self-Hosted access token for the "ansible-by-cyberakr" API Application                                                                                       |
+   | `client_id`    | NGTS (Strata Cloud Manager) OAuth2 service-account client id. Supplying `client_id` and `client_secret` selects the NGTS connection                                                        |
+   | `client_secret`| NGTS (Strata Cloud Manager) OAuth2 service-account client secret                                                                                                                          |
    | `password`     | **[DEPRECATED]**  CyberArk Certificate Manager, Self-Hosted WebSDK password, use `access_token` if possible                                                                                |
+   | `scope`        | NGTS (Strata Cloud Manager) OAuth2 scope in the form "tsg_id:<TSG_ID>". Provide `scope` or `tsg_id`                                                                                        |
    | `test_mode`    | When "true", the role operates without connecting to CyberArk Certificate Manager, Self-Hosted or CyberArk Certificate Manager, SaaS                                                       |
    | `token`        | CyberArk Certificate Manager, SaaS API key                                                                                                                                                 |
+   | `token_url`    | NGTS (Strata Cloud Manager) OAuth2 token endpoint. Optional; defaults to the Palo Alto production endpoint, set it only for non-production environments                                    |
    | `trust_bundle` | Text file containing trust anchor certificates in PEM (text) format, generally required forCyberArk Certificate Manager, Self-Hosted                                                       |
-   | `url`          | CyberArk Certificate Manager, Self-Hosted URL (e.g. "https://tpp.venafi.example")                                                                                                          |
+   | `tsg_id`       | NGTS (Strata Cloud Manager) tenant service group id (a 10-digit integer). Provide `tsg_id` or `scope`                                                                                      |
+   | `url`          | CyberArk Certificate Manager, Self-Hosted URL (e.g. "https://tpp.venafi.example"). For NGTS, optional; defaults to the Palo Alto production endpoint                                        |
    | `user`         | **[DEPRECATED]** CyberArk Certificate Manager, Self-Hosted WebSDK username, use `access_token` if possible                                                                                 |
-   | `zone`         | Policy folder for CyberArk Certificate Manager, Self-Hosted or Application name and Issuing Template API Alias for CyberArk Certificate Manager, SaaS (e.g. "Business App\Enterprise CIT") |
+   | `zone`         | Policy folder for CyberArk Certificate Manager, Self-Hosted; Application name and Issuing Template API Alias for SaaS (e.g. "Business App\Enterprise CIT"); Issuing Template alias only for NGTS |
 
 3. Use `ansible-vault` to encrypt the `credentials.yml` file using a password.  This is optional but highly recommended.
    As long as you know the password you can always decrypt the file to make changes and then re-encrypt it.

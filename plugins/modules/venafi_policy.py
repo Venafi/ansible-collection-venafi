@@ -23,8 +23,12 @@ DOCUMENTATION = '''
 module: venafi_policy
 short_description: Creates or deletes policies on CyberArk platforms
 description:
-    - CyberArk policy management module for working with CyberArk Certificate Manager, SaaS and CyberArk Certificate Manager, Self-Hosted.
+    - CyberArk policy management module for working with CyberArk Certificate Manager, SaaS,
+      CyberArk Certificate Manager, Self-Hosted, and Strata Cloud Manager (NGTS).
     - It allows to create a policy at I(zone) on the CyberArk platform from a file defined by I(policy_spec_path).
+    - NGTS (Strata Cloud Manager) is selected by supplying the OAuth2 service-account credentials
+      (I(client_id), I(client_secret), and I(tsg_id) or I(scope)). NGTS has no Application or owner
+      layer, so the policy's I(users) and I(owners) are ignored and read back empty.
     - As of now, policy's delete operation is not supported.
 version_added: "0.6.0"
 author: Russel Vela (@rvelaVenafi)
@@ -32,6 +36,9 @@ options:
     zone:
         description:
             - The location where the Policy Specification will be created on the CyberArk platform.
+            - Self-Hosted (TPP) uses a policy-folder DN (for example C(example\\policy)); SaaS uses
+              C(ApplicationName\\IssuingTemplateAlias); NGTS (Strata Cloud Manager) uses the
+              issuing-template (CIT) alias only, with no application split.
         required: true
         type: str
     policy_spec_path:
