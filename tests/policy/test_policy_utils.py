@@ -44,8 +44,9 @@ def full_ps():
     )
 
 
-def changed(local, remote, ignore_owners_users=False):
-    is_changed, msgs = check_policy_specification(local, remote, ignore_owners_users=ignore_owners_users)
+def changed(local, remote, ignore_owners_users=False, is_tpp=False):
+    is_changed, msgs = check_policy_specification(
+        local, remote, ignore_owners_users=ignore_owners_users, is_tpp=is_tpp)
     return is_changed
 
 
@@ -141,6 +142,26 @@ class TestCertAuthority(unittest.TestCase):
         rem = full_ps()
         rem.policy.certificate_authority = 'OTHER\\Intermediate\\Template'
         self.assertTrue(changed(loc, rem))
+
+    # Bug C: the DEFAULT_CA effective-CA fallback is Cloud/NGTS-only. On TPP a folder that locks no
+    # CA reads back "", so an omitted/built-in local CA must NOT be reported as changed.
+    def test_tpp_omitted_ca_vs_empty_remote_no_churn(self):
+        loc = full_ps()
+        loc.policy.certificate_authority = DEFAULT_CA  # parser forces DEFAULT_CA when the file omits it
+        rem = full_ps()
+        rem.policy.certificate_authority = ''          # TPP folder with no CA locked
+        self.assertFalse(changed(loc, rem, is_tpp=True))
+        # Cloud/NGTS keeps the effective-CA reset semantics (reported, converges after one apply).
+        self.assertTrue(changed(loc, rem, is_tpp=False))
+
+    def test_tpp_explicit_real_ca_still_diffed(self):
+        loc = full_ps()
+        loc.policy.certificate_authority = '\\VED\\Policy\\RealCA'
+        rem = full_ps()
+        rem.policy.certificate_authority = ''
+        self.assertTrue(changed(loc, rem, is_tpp=True))
+        rem.policy.certificate_authority = '\\VED\\Policy\\RealCA'
+        self.assertFalse(changed(loc, rem, is_tpp=True))
 
 
 class TestFormerCrashPaths(unittest.TestCase):
@@ -272,6 +293,19 @@ class TestUriProtocolsIpConstraints(unittest.TestCase):
 
     def test_ip_constraints_omitted_local_no_churn(self):
         self.assertFalse(changed(self._ps(ip_constraints=None), self._ps(ip_constraints=['v4'])))
+
+    # Bug B: when the platform returns None for a list the local spec declares, building the drift
+    # message iterated None -> "TypeError: 'NoneType' object is not iterable". Must report drift.
+    def test_uri_protocols_local_set_remote_none_no_crash(self):
+        self.assertTrue(changed(self._ps(uri_protocols=['https']), self._ps(uri_protocols=None)))
+
+    def test_ip_constraints_local_set_remote_none_no_crash(self):
+        self.assertTrue(changed(self._ps(ip_constraints=['v4']), self._ps(ip_constraints=None)))
+
+    def test_domains_local_set_remote_none_no_crash(self):
+        loc = PolicySpecification(policy=Policy(domains=['a.com']))
+        rem = PolicySpecification(policy=Policy(domains=None, max_valid_days=90))
+        self.assertTrue(changed(loc, rem))
 
 
 if __name__ == "__main__":

@@ -138,8 +138,10 @@ HAS_VCERT = True
 try:
     from vcert.errors import VenafiError, VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior
     from vcert.parser import json_parser, yaml_parser
+    from vcert.connection_tpp_abstract import AbstractTPPConnection
 except ImportError:
     HAS_VCERT = False
+    AbstractTPPConnection = ()  # isinstance(..., ()) is always False when vcert is unavailable
 
 F_TEST_MODE = 'test_mode'
 F_CHANGED = 'changed'
@@ -162,8 +164,14 @@ class VPolicyManagement:
         self.state = module.params[F_STATE]
         self.force = module.params[F_FORCE]
         self.zone = module.params[F_ZONE]
-        self.local_ps = module.params[F_PS_PATH]
+        # F_PS_PATH is the alias 'policy_spec_path'; the canonical argspec key is 'path'. When the
+        # user omits it (e.g. the documented state=absent case) Ansible does not populate the alias
+        # key, so a direct module.params[F_PS_PATH] raises KeyError. Use .get() -> None instead.
+        self.local_ps = module.params.get(F_PS_PATH)
         self.connection = get_venafi_connection(module)
+        # Self-Hosted (TPP) needs a different certificateAuthority comparison than Cloud/NGTS
+        # (DEFAULT_CA is a Cloud-only value). Detect it authoritatively from the connection object.
+        self.is_tpp = isinstance(self.connection, AbstractTPPConnection)
 
     def validate(self):
         """
@@ -218,7 +226,8 @@ class VPolicyManagement:
                 # so skip owners/users/approvers there (they always read back empty).
                 local_ps = self._read_policy_spec_file(self.local_ps)
                 changed, new_msgs = check_policy_specification(
-                    local_ps, remote_ps, ignore_owners_users=is_ngts_request(self.module))
+                    local_ps, remote_ps, ignore_owners_users=is_ngts_request(self.module),
+                    is_tpp=self.is_tpp)
                 if changed:
                     result[F_CHANGED] = True
                     result[F_POLICY_UPDATED] = self.zone

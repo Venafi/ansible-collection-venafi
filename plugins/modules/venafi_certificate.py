@@ -108,7 +108,7 @@ options:
         description:
             - Curve name for the ECDSA private key algorithm.
             - Requires I(privatekey_type=ECDSA). Use C(ed25519) to request an Ed25519 key
-              (needs C(vcert>=0.22.0)).
+              (needs C(vcert>=0.22.1)).
         default: P521
         choices:
             - P256
@@ -399,6 +399,12 @@ class VCertificate:
         self.chain_filename = module.params[F_CHAIN_PATH]
         self.csr_path = module.params[F_CSR_PATH]
         self.privatekey_filename = module.params[F_PK_PATH]
+        # Per the documented behavior ("If not set, the private key will be placed near certificate
+        # with key suffix"), derive a key path from the certificate path when none is supplied.
+        # Without this, a local/service CSR that generates a key would call _atomic_write(None, ...)
+        # and crash with a TypeError once serialize_private_key is set (VC-59232 follow-up).
+        if not self.privatekey_filename and self.certificate_filename:
+            self.privatekey_filename = "%s.key" % os.path.splitext(self.certificate_filename)[0]
 
         self.privatekey_type = module.params[F_PK_TYPE]
         self.privatekey_curve = module.params[F_PK_CURVE]

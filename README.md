@@ -39,7 +39,7 @@ This collection depends on vcert-python. Due to this, collection requires Python
 CyberArk has also announced the end of support for Python less than 3.6. As such support for Python less than 3.6 by this collection has been deprecated.
 
 ## Ansible version compatibility
-This collection has been tested against the following Ansible versions: >= 2.13
+This collection has been tested against the following Ansible versions: >= 2.15
 
 ## Installing this collection
 You can install the venafi.machine_identity collection with the Ansible Galaxy CLI:

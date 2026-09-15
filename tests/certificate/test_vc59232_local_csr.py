@@ -130,6 +130,21 @@ class TestVC59232LocalCsr(unittest.TestCase):
         vc.enroll()
         self.assertTrue(os.path.exists(PRIV_PATH))
 
+    def test_local_csr_without_privatekey_path_writes_derived_key(self):
+        # Follow-up: with privatekey_path omitted, serialize_private_key=True previously called
+        # _atomic_write(None, ...) -> TypeError. The key path is now derived from cert_path
+        # ("placed near certificate with key suffix"), so the key is written and no crash occurs.
+        derived = os.path.splitext(CERT_PATH)[0] + ".key"
+        _rm(derived)
+        try:
+            vc = _build({"privatekey_path": None})
+            self.assertEqual(vc.privatekey_filename, derived)
+            vc.enroll()
+            self.assertTrue(os.path.exists(derived),
+                            "local CSR without privatekey_path did not write the derived key file")
+        finally:
+            _rm(derived)
+
     def test_check_twice_does_not_duplicate_messages(self):
         # BUG #3: check() then validate()->check() must not accumulate duplicate messages.
         vc = _build()

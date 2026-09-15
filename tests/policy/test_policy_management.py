@@ -125,6 +125,7 @@ def _bare_vpm(module, connection):
     v.zone = module.params.get('zone')
     v.local_ps = module.params.get('policy_spec_path')
     v.connection = connection
+    v.is_tpp = module.params.get('is_tpp', False)  # test shim; real __init__ derives from connection
     return v
 
 
@@ -158,3 +159,56 @@ class TestPolicyCheckOffline(unittest.TestCase):
         self.assertTrue(result[venafi_policy.F_CHANGED])
         self.assertEqual(result[venafi_policy.F_POLICY_CREATED], 'my-cit')
         self.assertIsNone(module.fail_code)
+
+
+def _full_params(**over):
+    """A complete param dict (every field get_venafi_connection reads is present) with test_mode
+    on, so the real VPolicyManagement.__init__ runs fully offline. policy_spec_path is deliberately
+    NOT included unless overridden."""
+    params = {
+        'test_mode': True, 'url': None, 'user': None, 'password': None, 'access_token': None,
+        'token': None, 'trust_bundle': None, 'client_id': None, 'client_secret': None,
+        'token_url': None, 'tsg_id': None, 'scope': None, 'zone': 'my-cit',
+        'state': 'present', 'force': False,
+    }
+    params.update(over)
+    return params
+
+
+class TestRegression140Module(unittest.TestCase):
+    """Regression coverage at the module level for the 1.4.0 fixes."""
+
+    def test_absent_without_policy_spec_path_no_keyerror(self):
+        # Bug A: __init__ used module.params[F_PS_PATH]; the alias key is absent when the option is
+        # omitted, so state=absent with no path raised KeyError before any logic ran.
+        module = FakeModule(_full_params(state='absent'))
+        v = VPolicyManagement(module)  # must NOT raise KeyError
+        self.assertIsNone(v.local_ps)
+        # check() then fails fast on test_mode with a clear message (not a raw traceback)
+        self.assertRaises(Fail, v.check)
+        self.assertIn('test_mode', module.fail_code['msg'])
+
+    def test_present_without_policy_spec_path_no_keyerror(self):
+        module = FakeModule(_full_params(state='present'))
+        v = VPolicyManagement(module)  # must NOT raise KeyError
+        self.assertIsNone(v.local_ps)
+
+    def test_is_tpp_threaded_into_check(self):
+        # Bug C wiring: check() must pass is_tpp so the CA comparison is backend-correct. A TPP
+        # folder that locks no CA (remote CA "") vs a local file that omits CA must NOT churn.
+        from vcert.policy.policy_spec import PolicySpecification, Policy, DEFAULT_CA
+        src = '/tmp/reg140_local.json'
+        with open(src, 'w') as fh:
+            fh.write('{"policy": {"domains": ["example.com"], "maxValidDays": 90}}')
+        remote = PolicySpecification(policy=Policy(domains=['example.com'], max_valid_days=90))
+        remote.policy.certificate_authority = ''  # TPP folder with no CA locked
+
+        tpp = _bare_vpm(FakeModule({'zone': 'z', 'state': 'present', 'policy_spec_path': src,
+                                    'is_tpp': True}), _StubConn(policy=remote))
+        self.assertFalse(tpp.check()[venafi_policy.F_CHANGED], 'TPP CA compare churned (bug C)')
+
+        cloud = _bare_vpm(FakeModule({'zone': 'z', 'state': 'present', 'policy_spec_path': src,
+                                      'is_tpp': False}), _StubConn(policy=remote))
+        self.assertTrue(cloud.check()[venafi_policy.F_CHANGED],
+                        'Cloud/NGTS effective-CA reset should still be reported')
+        os.remove(src)
