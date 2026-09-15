@@ -45,9 +45,12 @@ def _get_err_msg(name, local, remote):
     if isinstance(local, list):
         local_str = ''
         remote_str = ''
-        for x in local:
+        # remote (and, defensively, local) may be None: the platform returns None for a list field
+        # a CIT does not constrain (e.g. uriProtocols/ipConstraints/domains). Iterating None here
+        # raised "TypeError: 'NoneType' object is not iterable" while building the drift message.
+        for x in (local or []):
             local_str += x.__str__() + ','
-        for y in remote:
+        for y in (remote or []):
             remote_str += y.__str__() + ','
         local_str = '[%s]' % local_str[:len(local_str) - 1]
         remote_str = '[%s]' % remote_str[:len(remote_str) - 1]
@@ -94,7 +97,7 @@ def _append_list(list_fields, name, local, remote):
         list_fields.append((name, local, remote))
 
 
-def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
+def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False, is_tpp=False):
     """
     Validates that all values present in the source vcert.policy.PolicySpecification match with
     the current output PolicySpecification.
@@ -111,6 +114,10 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
         (Strata Cloud Manager) has no Application/owner layer, so get_policy always returns them
         empty and set_policy ignores them; comparing a local file that lists them would report
         changed forever (parity with the Go NGTS connector).
+    :param bool is_tpp: True for Self-Hosted (TPP). Controls the certificate_authority comparison:
+        the DEFAULT_CA effective-CA fallback is a Cloud/VaaS/NGTS concept, so on TPP an omitted or
+        built-in local CA is not diffed against the folder's real value (which is "" when no CA is
+        locked), preventing perpetual false 'changed'.
     :rtype: tuple[bool, list[str]]
     """
     is_changed = False
@@ -141,17 +148,30 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
             _append_value(value_fields, p + FIELD_WILDCARD_ALLOWED, local_p.wildcard_allowed,
                           remote_p.wildcard_allowed)
             _append_value(value_fields, p + FIELD_MAX_VALID_DAYS, local_p.max_valid_days, remote_p.max_valid_days)
-            # certificate_authority is always compared against the EFFECTIVE CA that set_policy will
-            # apply. The vcert SDK (like the Go/Terraform BuildCloudCitRequest) defaults an omitted
-            # CA to the built-in DEFAULT_CA and sends exactly that, so the diff must reflect the CA
-            # apply would set (declarative parity with vcert Go / terraform-provider-venafi). An
-            # omitted or explicit built-in CA that would reset a real remote CA is therefore reported
-            # as a change instead of being silently skipped; it converges after one apply.
-            effective_local_ca = local_p.certificate_authority or DEFAULT_CA
-            if not _check_value(remote_p.certificate_authority, effective_local_ca):
-                is_changed = True
-                msgs.append(_get_err_msg(p + FIELD_CERTIFICATE_AUTHORITY, effective_local_ca,
-                                         remote_p.certificate_authority))
+            # certificate_authority comparison is backend-dependent.
+            if is_tpp:
+                # Self-Hosted (TPP): DEFAULT_CA is a Cloud-only value. The TPP parser forces an
+                # omitted local CA to DEFAULT_CA, and get_policy returns "" for a folder that locks
+                # no CA, so an effective-CA compare would report changed on every run and apply would
+                # push the bogus Cloud string into the folder. Only diff an explicitly-set,
+                # non-default CA (restores the pre-effective-CA guard for TPP).
+                if local_p.certificate_authority and local_p.certificate_authority != DEFAULT_CA:
+                    if not _check_value(remote_p.certificate_authority, local_p.certificate_authority):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_CERTIFICATE_AUTHORITY,
+                                                 local_p.certificate_authority,
+                                                 remote_p.certificate_authority))
+            else:
+                # Cloud/VaaS & NGTS: set_policy defaults an omitted CA to the built-in DEFAULT_CA and
+                # sends exactly that (declarative parity with vcert Go / terraform-provider-venafi
+                # BuildCloudCitRequest), so compare against the EFFECTIVE CA apply would set. An
+                # omitted or explicit built-in CA that would reset a real remote CA is reported as a
+                # change instead of being silently skipped; it converges after one apply.
+                effective_local_ca = local_p.certificate_authority or DEFAULT_CA
+                if not _check_value(remote_p.certificate_authority, effective_local_ca):
+                    is_changed = True
+                    msgs.append(_get_err_msg(p + FIELD_CERTIFICATE_AUTHORITY, effective_local_ca,
+                                             remote_p.certificate_authority))
             _append_value(value_fields, p + FIELD_AUTOINSTALLED, local_p.auto_installed, remote_p.auto_installed)
 
             # Validating Policy.Subject

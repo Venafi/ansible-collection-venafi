@@ -1,0 +1,241 @@
+---
+# Ansible-playbook-level smoke test for the INSTALLED venafi.machine_identity collection.
+# Exercises the modules through the real Ansible engine on the fake/test backend (no network,
+# no CyberArk credentials). Every check is an `assert`, so the play fails loudly on any drift.
+#
+# Run via tests/smoke/run_smoke.sh, or directly:
+#   ANSIBLE_COLLECTIONS_PATH=<path> ansible-playbook tests/smoke/playbooks/smoke.yml
+#
+# NOTE: this play only covers behaviour that WORKS in 1.4.0. The four confirmed defects
+# (KeyError on policy absent, policy_utils None-crash, TPP CA churn, default-CSR TypeError)
+# are encoded as xfail regression gates in tests/smoke/test_artifact.py, not here.
+- name: venafi.machine_identity smoke (test_mode)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    smoke_out: /tmp/venafi-mi-smoke
+  tasks:
+    - name: reset output directory
+      ansible.builtin.file:
+        path: "{{ smoke_out }}"
+        state: "{{ item }}"
+        mode: "0755"
+      loop: [absent, directory]
+
+    # --- certificate enrollment: RSA (default type explicit) + idempotency -------------------
+    - name: enroll RSA 2048 (first run)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: rsa.smoke.example
+        cert_path: "{{ smoke_out }}/rsa.crt"
+        privatekey_path: "{{ smoke_out }}/rsa.key"
+        privatekey_type: RSA
+        privatekey_size: 2048
+        zone: ""
+      register: rsa1
+
+    - name: enroll RSA 2048 (second run - must be idempotent)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: rsa.smoke.example
+        cert_path: "{{ smoke_out }}/rsa.crt"
+        privatekey_path: "{{ smoke_out }}/rsa.key"
+        privatekey_type: RSA
+        privatekey_size: 2048
+        zone: ""
+      register: rsa2
+
+    - name: assert RSA enroll + idempotency
+      ansible.builtin.assert:
+        that:
+          - rsa1.changed
+          - not rsa2.changed
+        fail_msg: "RSA enroll not idempotent: run1.changed={{ rsa1.changed }} run2.changed={{ rsa2.changed }}"
+
+    # --- ECDSA P256 + idempotency (guards the curve-casing idempotency fix) -------------------
+    - name: enroll ECDSA P256 (first run)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: ec.smoke.example
+        cert_path: "{{ smoke_out }}/ec.crt"
+        privatekey_path: "{{ smoke_out }}/ec.key"
+        privatekey_type: ECDSA
+        privatekey_curve: P256
+        zone: ""
+      register: ec1
+
+    - name: enroll ECDSA P256 (second run - must be idempotent despite P256 vs p256 casing)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: ec.smoke.example
+        cert_path: "{{ smoke_out }}/ec.crt"
+        privatekey_path: "{{ smoke_out }}/ec.key"
+        privatekey_type: ECDSA
+        privatekey_curve: P256
+        zone: ""
+      register: ec2
+
+    - name: assert ECDSA enroll + casing-insensitive idempotency
+      ansible.builtin.assert:
+        that:
+          - ec1.changed
+          - not ec2.changed
+        fail_msg: "ECDSA P256 not idempotent (curve casing regression?)"
+
+    # --- Ed25519 (headline vcert 0.22.1 feature) ---------------------------------------------
+    - name: enroll Ed25519
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: ed.smoke.example
+        cert_path: "{{ smoke_out }}/ed.crt"
+        privatekey_path: "{{ smoke_out }}/ed.key"
+        privatekey_type: ECDSA
+        privatekey_curve: ed25519
+        zone: ""
+      register: ed1
+
+    - name: assert Ed25519 key written
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/ed.key"
+      register: ed_key
+
+    - name: assert Ed25519 enroll
+      ansible.builtin.assert:
+        that:
+          - ed1.changed
+          - ed_key.stat.exists
+          - ed_key.stat.size > 0
+
+    # --- default local CSR WITH privatekey_path -> key must be written (VC-59232 #2) ----------
+    - name: enroll default local CSR (no privatekey_type, explicit key path)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: def.smoke.example
+        cert_path: "{{ smoke_out }}/def.crt"
+        privatekey_path: "{{ smoke_out }}/def.key"
+        zone: ""
+      register: def1
+
+    - name: stat default key
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/def.key"
+      register: def_key
+
+    - name: assert default local CSR wrote the private key
+      ansible.builtin.assert:
+        that:
+          - def1.changed
+          - def_key.stat.exists
+          - def_key.stat.size > 0
+        fail_msg: "VC-59232 #2 regression: default local CSR did not write the private key"
+
+    # --- negative / fail-fast paths ----------------------------------------------------------
+    - name: invalid privatekey_type -> clean choices error (argspec hardening)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: bad.smoke.example
+        cert_path: "{{ smoke_out }}/bad.crt"
+        privatekey_type: BOGUS
+        zone: ""
+      register: bad_type
+      ignore_errors: true
+
+    - name: assert invalid type failed cleanly
+      ansible.builtin.assert:
+        that:
+          - bad_type is failed
+          - "'must be one of' in bad_type.msg"
+
+    - name: prepare a policy spec file
+      ansible.builtin.copy:
+        dest: "{{ smoke_out }}/policy.json"
+        content: "{}"
+        mode: "0644"
+
+    - name: policy in test_mode -> fail fast with clear message (no NotImplementedError)
+      venafi.machine_identity.venafi_policy:
+        test_mode: true
+        zone: some-zone
+        state: present
+        policy_spec_path: "{{ smoke_out }}/policy.json"
+      register: policy_tm
+      ignore_errors: true
+
+    - name: assert policy test_mode fail-fast
+      ansible.builtin.assert:
+        that:
+          - policy_tm is failed
+          - "'test_mode' in policy_tm.msg"
+
+    - name: ssh_ca with NGTS credentials -> fail_if_ngts
+      venafi.machine_identity.venafi_ssh_ca:
+        client_id: cid
+        client_secret: csec
+        tsg_id: "123"
+        ca_template: my-cit
+        public_key_path: "{{ smoke_out }}/ca.pub"
+      register: ssh_ca_ngts
+      ignore_errors: true
+
+    - name: ssh_certificate with NGTS credentials -> fail_if_ngts
+      venafi.machine_identity.venafi_ssh_certificate:
+        client_id: cid
+        client_secret: csec
+        tsg_id: "123"
+        template: my-cit
+        key_id: my-key
+        cert_path: "{{ smoke_out }}/id.cert"
+      register: ssh_cert_ngts
+      ignore_errors: true
+
+    - name: assert SSH modules reject NGTS
+      ansible.builtin.assert:
+        that:
+          - ssh_ca_ngts is failed
+          - "'NGTS' in ssh_ca_ngts.msg"
+          - ssh_cert_ngts is failed
+          - "'NGTS' in ssh_cert_ngts.msg"
+
+    # --- regression A: policy state=absent without policy_spec_path must not KeyError ----------
+    - name: policy state=absent without policy_spec_path (test_mode) -> clean fail, no traceback
+      venafi.machine_identity.venafi_policy:
+        test_mode: true
+        zone: some-zone
+        state: absent
+      register: policy_absent
+      ignore_errors: true
+
+    - name: assert policy absent failed cleanly (no KeyError)
+      ansible.builtin.assert:
+        that:
+          - policy_absent is failed
+          - "'test_mode' in policy_absent.msg"
+          - "'KeyError' not in policy_absent.msg"
+
+    # --- regression D: default local CSR without privatekey_path writes a derived key ----------
+    - name: enroll default local CSR WITHOUT privatekey_path
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: nopk.smoke.example
+        cert_path: "{{ smoke_out }}/nopk.crt"
+        zone: ""
+      register: nopk1
+
+    - name: stat derived key (cert base + .key)
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/nopk.key"
+      register: nopk_key
+
+    - name: assert default CSR without privatekey_path wrote a derived key
+      ansible.builtin.assert:
+        that:
+          - nopk1.changed
+          - nopk_key.stat.exists
+          - nopk_key.stat.size > 0
+          - nopk1.privatekey_filename == smoke_out ~ '/nopk.key'
+        fail_msg: "default local CSR without privatekey_path did not write the derived key file"
+
+    - name: smoke summary
+      ansible.builtin.debug:
+        msg: "SMOKE PLAY PASSED: RSA/ECDSA/Ed25519 enroll+idempotency, default-CSR key write (with & without privatekey_path), policy absent no-crash, and all fail-fast paths OK."
