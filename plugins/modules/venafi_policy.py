@@ -136,11 +136,12 @@ except ImportError:
 
 HAS_VCERT = True
 try:
-    from vcert.errors import VenafiError
+    from vcert.errors import VenafiError, VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior
     from vcert.parser import json_parser, yaml_parser
 except ImportError:
     HAS_VCERT = False
 
+F_TEST_MODE = 'test_mode'
 F_CHANGED = 'changed'
 F_CHANGED_MSGS = 'changed_msgs'
 F_STATE = 'state'
@@ -184,6 +185,13 @@ class VPolicyManagement:
         :return: a dictionary with the results of the validation
         :rtype: dict[str, Any]
         """
+        # The fake/test backend implements no policy operations (get_policy raises
+        # NotImplementedError, which is not a VenafiError and would escape as a raw traceback), so
+        # fail fast with a clear message instead of crashing.
+        if self.module.params.get(F_TEST_MODE):
+            self.module.fail_json(msg='Policy management is not supported in test_mode: the fake '
+                                      'backend implements no policy operations.')
+
         result = {
             F_CHANGED: False,
             F_POLICY_CREATED: '',
@@ -193,6 +201,11 @@ class VPolicyManagement:
         msgs = []
         try:
             remote_ps = self.connection.get_policy(self.zone)
+        except (VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior) as e:
+            # Connection/auth/server errors are not "policy absent". Treating them as a missing
+            # policy would mask an NGTS token_url/credential problem as a spurious "creating policy"
+            # (changed=True) and defeat idempotency, so surface them instead of swallowing.
+            self.module.fail_json(msg='Failed to read policy %s: %s' % (self.zone, to_native(e)))
         except VenafiError as e:
             self.module.debug('Get policy %s failed. Assuming Policy does not exist. Error: %s'
                               % (self.zone, to_native(e)))

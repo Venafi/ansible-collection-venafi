@@ -17,9 +17,11 @@ import os
 import unittest
 
 from vcert.parser import json_parser
+from vcert.errors import VenafiError, VenafiConnectionError
 
+from plugins.modules import venafi_policy
 from plugins.modules.venafi_policy import VPolicyManagement
-from test_utils import FakeModule, FAKE, TPP_ACCESS_TOKEN, TPP_TOKEN_URL, CLOUD_URL, CLOUD_APIKEY, CLOUD_ZONE, \
+from test_utils import FakeModule, Fail, FAKE, TPP_ACCESS_TOKEN, TPP_TOKEN_URL, CLOUD_URL, CLOUD_APIKEY, CLOUD_ZONE, \
     TPP_TRUST_BUNDLE, TPP_ZONE
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -100,3 +102,59 @@ def get_params(platform):
         params['token'] = CLOUD_APIKEY
 
     return params
+
+
+class _StubConn(object):
+    """Minimal connection stub: get_policy either raises or returns a canned policy."""
+    def __init__(self, exc=None, policy=None):
+        self._exc = exc
+        self._policy = policy
+
+    def get_policy(self, zone):
+        if self._exc is not None:
+            raise self._exc
+        return self._policy
+
+
+def _bare_vpm(module, connection):
+    """Build a VPolicyManagement offline, bypassing get_venafi_connection (no network)."""
+    v = VPolicyManagement.__new__(VPolicyManagement)
+    v.module = module
+    v.state = module.params.get('state', 'present')
+    v.force = module.params.get('force', False)
+    v.zone = module.params.get('zone')
+    v.local_ps = module.params.get('policy_spec_path')
+    v.connection = connection
+    return v
+
+
+class TestPolicyCheckOffline(unittest.TestCase):
+    """Offline coverage for check(): the test_mode fail-fast guard and the narrowed error handling
+    (connection/auth errors surface; only a generic VenafiError is treated as 'policy absent')."""
+
+    @staticmethod
+    def _module(**overrides):
+        params = {'test_mode': False, 'zone': 'my-cit', 'policy_spec_path': SOURCE_PATH,
+                  'state': 'present', 'force': False}
+        params.update(overrides)
+        return FakeModule(params)
+
+    def test_test_mode_fails_fast(self):
+        module = self._module(test_mode=True)
+        v = _bare_vpm(module, _StubConn(exc=NotImplementedError()))
+        self.assertRaises(Fail, v.check)
+        self.assertIn('test_mode', module.fail_code['msg'])
+
+    def test_connection_error_is_surfaced(self):
+        module = self._module()
+        v = _bare_vpm(module, _StubConn(exc=VenafiConnectionError('token endpoint 500')))
+        self.assertRaises(Fail, v.check)
+        self.assertIn('Failed to read policy', module.fail_code['msg'])
+
+    def test_generic_venafi_error_treated_as_absent(self):
+        module = self._module()
+        v = _bare_vpm(module, _StubConn(exc=VenafiError('policy not found')))
+        result = v.check()
+        self.assertTrue(result[venafi_policy.F_CHANGED])
+        self.assertEqual(result[venafi_policy.F_POLICY_CREATED], 'my-cit')
+        self.assertIsNone(module.fail_code)

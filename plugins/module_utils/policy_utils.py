@@ -26,10 +26,10 @@ try:
         FIELD_ORGS, FIELD_ORG_UNITS, FIELD_LOCALITIES, FIELD_STATES, FIELD_COUNTRIES, FIELD_KEY_PAIR, \
         FIELD_SERVICE_GENERATED, FIELD_REUSE_ALLOWED, FIELD_RSA_KEY_SIZES, FIELD_ELLIPTIC_CURVES, FIELD_KEY_TYPES, \
         FIELD_SUBJECT_ALT_NAMES, FIELD_DNS_ALLOWED, FIELD_EMAIL_ALLOWED, FIELD_IP_ALLOWED, FIELD_UPN_ALLOWED, \
-        FIELD_URI_ALLOWED, FIELD_DEFAULTS, FIELD_DEFAULT_DOMAIN, FIELD_DEFAULT_AUTOINSTALLED, FIELD_DEFAULT_SUBJECT, \
-        FIELD_DEFAULT_ORG, FIELD_DEFAULT_LOCALITY, FIELD_DEFAULT_STATE, FIELD_DEFAULT_COUNTRY, FIELD_DEFAULT_KEY_PAIR, \
-        FIELD_DEFAULT_ELLIPTIC_CURVE, FIELD_DEFAULT_RSA_KEY_SIZE, FIELD_DEFAULT_SERVICE_GENERATED, \
-        FIELD_DEFAULT_KEY_TYPE, FIELD_USERS
+        FIELD_URI_ALLOWED, FIELD_URI_PROTOCOLS, FIELD_IP_CONSTRAINTS, FIELD_DEFAULTS, FIELD_DEFAULT_DOMAIN, \
+        FIELD_DEFAULT_AUTOINSTALLED, FIELD_DEFAULT_SUBJECT, FIELD_DEFAULT_ORG, FIELD_DEFAULT_LOCALITY, \
+        FIELD_DEFAULT_STATE, FIELD_DEFAULT_COUNTRY, FIELD_DEFAULT_KEY_PAIR, FIELD_DEFAULT_ELLIPTIC_CURVE, \
+        FIELD_DEFAULT_RSA_KEY_SIZE, FIELD_DEFAULT_SERVICE_GENERATED, FIELD_DEFAULT_KEY_TYPE, FIELD_USERS
     from vcert.policy.policy_spec import DEFAULT_CA
 except ImportError:
     HAS_VCERT = False
@@ -70,10 +70,41 @@ def _get_empty_msg(name, empty_type):
     return ''
 
 
+def _append_value(value_fields, name, local, remote):
+    """
+    Queue a scalar field for comparison, but only when the local spec actually sets it.
+
+    A policy file that omits a field parses to None, which means 'unspecified' -- not 'set to
+    empty'. get_policy always returns the platform's real value, so comparing an omitted local
+    field against a populated remote reports a false 'changed' on every run and breaks idempotency
+    for minimal/declarative policy files. This mirrors the empty-local skip already used for
+    SubjectAltNames and certificateAuthority. Note booleans: an explicit False is compared (False
+    is not None); only an omitted (None) field is skipped. Use force=true to re-apply regardless.
+    """
+    if local is not None:
+        value_fields.append((name, local, remote))
+
+
+def _append_list(list_fields, name, local, remote):
+    """
+    Queue a list field for comparison, but only when the local spec provides a non-empty list.
+    An omitted/empty local list means 'unspecified' (see _append_value).
+    """
+    if local:
+        list_fields.append((name, local, remote))
+
+
 def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
     """
     Validates that all values present in the source vcert.policy.PolicySpecification match with
-    the current output PolicySpecification
+    the current output PolicySpecification.
+
+    Fields, lists and nested blocks that the local spec omits are treated as 'unspecified' and are
+    skipped rather than reported as changed: get_policy always returns the platform's full state,
+    so comparing an omitted local value against a populated remote would report a false 'changed'
+    on every run (breaking idempotency for minimal/declarative policy files). Only values the local
+    spec actually declares are diffed. force=true remains the escape hatch to re-apply regardless.
+
     :param vcert.policy.PolicySpecification local_ps:
     :param vcert.policy.PolicySpecification remote_ps:
     :param bool ignore_owners_users: skip owners/users/approvers/user_access comparison. NGTS
@@ -89,180 +120,174 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
     value_fields = []
 
     if not ignore_owners_users:
-        list_fields.append((FIELD_OWNERS, local_ps.owners, remote_ps.owners))
-        list_fields.append((FIELD_USERS, local_ps.users, remote_ps.users))
-        list_fields.append((FIELD_APPROVERS, local_ps.approvers, remote_ps.approvers))
-        value_fields.append((FIELD_USER_ACCESS, local_ps.user_access, remote_ps.user_access))
+        _append_list(list_fields, FIELD_OWNERS, local_ps.owners, remote_ps.owners)
+        _append_list(list_fields, FIELD_USERS, local_ps.users, remote_ps.users)
+        _append_list(list_fields, FIELD_APPROVERS, local_ps.approvers, remote_ps.approvers)
+        _append_value(value_fields, FIELD_USER_ACCESS, local_ps.user_access, remote_ps.user_access)
 
-    # Validating Policy
-    empty_local_p = _is_empty_object(local_ps.policy)
-    empty_remote_p = _is_empty_object(remote_ps.policy)
-    if empty_local_p and not empty_remote_p:
-        is_changed = True
-        msgs.append(_get_empty_msg('Policy', LOCAL))
-    elif not empty_local_p and empty_remote_p:
-        is_changed = True
-        msgs.append(_get_empty_msg('Policy', REMOTE))
-    elif not empty_local_p and not empty_remote_p:
-        local_p = local_ps.policy
-        remote_p = remote_ps.policy
-        p = '%s.' % FIELD_POLICY
-
-        list_fields.append((p + FIELD_DOMAINS, local_p.domains, remote_p.domains))
-
-        value_fields.append((p + FIELD_WILDCARD_ALLOWED, local_p.wildcard_allowed, remote_p.wildcard_allowed))
-        value_fields.append((p + FIELD_MAX_VALID_DAYS, local_p.max_valid_days, remote_p.max_valid_days))
-        # The vcert Policy constructor forces certificate_authority to DEFAULT_CA when the user omits
-        # it, so only compare when the local spec actually pinned a CA. Otherwise a local file that
-        # does not mention a CA is compared against the remote's real CA and reports a false
-        # 'changed' on every run.
-        if local_p.certificate_authority and local_p.certificate_authority != DEFAULT_CA:
-            value_fields.append((p + FIELD_CERTIFICATE_AUTHORITY, local_p.certificate_authority,
-                                 remote_p.certificate_authority))
-        value_fields.append((p + FIELD_AUTOINSTALLED, local_p.auto_installed, remote_p.auto_installed))
-
-        # Validating Policy.Subject
-        empty_local_subject = _is_empty_object(local_p.subject)
-        empty_remote_subject = _is_empty_object(remote_p.subject)
-        if empty_local_subject and not empty_remote_subject:
+    # Validating Policy. An omitted local 'policy' block means 'unspecified' -> skip; only a
+    # locally-declared policy that the remote lacks is a genuine change.
+    if not _is_empty_object(local_ps.policy):
+        if _is_empty_object(remote_ps.policy):
             is_changed = True
-            msgs.append(_get_empty_msg('Policy.Subject', LOCAL))
-        elif not empty_local_subject and empty_remote_subject:
-            is_changed = True
-            msgs.append(_get_empty_msg('Policy.Subject', REMOTE))
-        elif not empty_local_subject and not empty_remote_subject:
-            local_subject = local_p.subject
-            remote_subject = remote_p.subject
-            p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT)
+            msgs.append(_get_empty_msg('Policy', REMOTE))
+        else:
+            local_p = local_ps.policy
+            remote_p = remote_ps.policy
+            p = '%s.' % FIELD_POLICY
 
-            list_fields.append((p + FIELD_ORGS, local_subject.orgs, remote_subject.orgs))
-            list_fields.append((p + FIELD_ORG_UNITS, local_subject.org_units, remote_subject.org_units))
-            list_fields.append((p + FIELD_LOCALITIES, local_subject.localities, remote_subject.localities))
-            list_fields.append((p + FIELD_STATES, local_subject.states, remote_subject.states))
-            list_fields.append((p + FIELD_COUNTRIES, local_subject.countries, remote_subject.countries))
+            _append_list(list_fields, p + FIELD_DOMAINS, local_p.domains, remote_p.domains)
 
-        # Validating Policy.KeyPair
-        empty_local_kp = _is_empty_object(local_p.key_pair)
-        empty_remote_kp = _is_empty_object(remote_p.key_pair)
-        if empty_local_kp and not empty_remote_kp:
-            is_changed = True
-            msgs.append(_get_empty_msg('Policy.KeyPair', LOCAL))
-        elif not empty_local_kp and empty_remote_kp:
-            is_changed = True
-            msgs.append(_get_empty_msg('Policy.KeyPair', REMOTE))
-        elif not empty_local_kp and not empty_remote_kp:
-            local_kp = local_p.key_pair
-            remote_kp = remote_p.key_pair
-            p = '%s.%s.' % (FIELD_POLICY, FIELD_KEY_PAIR)
+            _append_value(value_fields, p + FIELD_WILDCARD_ALLOWED, local_p.wildcard_allowed,
+                          remote_p.wildcard_allowed)
+            _append_value(value_fields, p + FIELD_MAX_VALID_DAYS, local_p.max_valid_days, remote_p.max_valid_days)
+            # The vcert Policy constructor forces certificate_authority to DEFAULT_CA when the user
+            # omits it, so only compare when the local spec actually pinned a real (non-default) CA.
+            # (Comparing the *effective* local CA against a normalized built-in remote is a tracked
+            # follow-up; today an omitted CA that would rewrite a real remote CA is not flagged.)
+            if local_p.certificate_authority and local_p.certificate_authority != DEFAULT_CA:
+                _append_value(value_fields, p + FIELD_CERTIFICATE_AUTHORITY, local_p.certificate_authority,
+                              remote_p.certificate_authority)
+            _append_value(value_fields, p + FIELD_AUTOINSTALLED, local_p.auto_installed, remote_p.auto_installed)
 
-            value_fields.append((p + FIELD_SERVICE_GENERATED, local_kp.service_generated, remote_kp.service_generated))
-            value_fields.append((p + FIELD_REUSE_ALLOWED, local_kp.reuse_allowed, remote_kp.reuse_allowed))
+            # Validating Policy.Subject
+            if not _is_empty_object(local_p.subject):
+                if _is_empty_object(remote_p.subject):
+                    is_changed = True
+                    msgs.append(_get_empty_msg('Policy.Subject', REMOTE))
+                else:
+                    local_subject = local_p.subject
+                    remote_subject = remote_p.subject
+                    p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT)
 
-            list_fields.append((p + FIELD_RSA_KEY_SIZES, local_kp.rsa_key_sizes, remote_kp.rsa_key_sizes))
+                    _append_list(list_fields, p + FIELD_ORGS, local_subject.orgs, remote_subject.orgs)
+                    _append_list(list_fields, p + FIELD_ORG_UNITS, local_subject.org_units, remote_subject.org_units)
+                    _append_list(list_fields, p + FIELD_LOCALITIES, local_subject.localities,
+                                 remote_subject.localities)
+                    _append_list(list_fields, p + FIELD_STATES, local_subject.states, remote_subject.states)
+                    _append_list(list_fields, p + FIELD_COUNTRIES, local_subject.countries, remote_subject.countries)
 
-            # elliptic_curves is case-insensitive: vcert 0.22.1 get_policy returns UPPERCASE curves
-            # (e.g. "P256") while users write them lowercase, so a case-sensitive compare reports a
-            # false 'changed' every run. Compare like key_types.
-            if not _check_list_case_insensitive(remote_kp.elliptic_curves, local_kp.elliptic_curves):
-                is_changed = True
-                msgs.append(_get_err_msg(p + FIELD_ELLIPTIC_CURVES, local_kp.elliptic_curves,
-                                         remote_kp.elliptic_curves))
+            # Validating Policy.KeyPair
+            if not _is_empty_object(local_p.key_pair):
+                if _is_empty_object(remote_p.key_pair):
+                    is_changed = True
+                    msgs.append(_get_empty_msg('Policy.KeyPair', REMOTE))
+                else:
+                    local_kp = local_p.key_pair
+                    remote_kp = remote_p.key_pair
+                    p = '%s.%s.' % (FIELD_POLICY, FIELD_KEY_PAIR)
 
-            if not _check_key_types(remote_kp.key_types, local_kp.key_types):
-                is_changed = True
-                msgs.append(_get_err_msg(p + FIELD_KEY_TYPES, local_kp.key_types, remote_kp.key_types))
+                    _append_value(value_fields, p + FIELD_SERVICE_GENERATED, local_kp.service_generated,
+                                  remote_kp.service_generated)
+                    _append_value(value_fields, p + FIELD_REUSE_ALLOWED, local_kp.reuse_allowed,
+                                  remote_kp.reuse_allowed)
 
-        # Validating Policy.SubjectAltNames
-        empty_local_sans = _is_empty_object(local_p.subject_alt_names)
-        # Workaround issue, when local SANS is empty there is no point in checking remote SANS
-        # as remote policy will always have SANS, thus causing a false positive.
-        if not empty_local_sans:
-            empty_remote_sans = _is_empty_object(remote_p.subject_alt_names)
-            if not empty_local_sans and empty_remote_sans:
-                is_changed = True
-                msgs.append(_get_empty_msg('Policy.SubjectAltNames', REMOTE))
-            elif not empty_local_sans and not empty_remote_sans:
-                local_sans = local_p.subject_alt_names
-                remote_sans = remote_p.subject_alt_names
-                p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT_ALT_NAMES)
+                    _append_list(list_fields, p + FIELD_RSA_KEY_SIZES, local_kp.rsa_key_sizes, remote_kp.rsa_key_sizes)
 
-                value_fields.append((p + FIELD_DNS_ALLOWED, local_sans.dns_allowed, remote_sans.dns_allowed))
-                value_fields.append((p + FIELD_EMAIL_ALLOWED, local_sans.email_allowed, remote_sans.email_allowed))
-                value_fields.append((p + FIELD_IP_ALLOWED, local_sans.ip_allowed, remote_sans.ip_allowed))
-                value_fields.append((p + FIELD_UPN_ALLOWED, local_sans.upn_allowed, remote_sans.upn_allowed))
-                value_fields.append((p + FIELD_URI_ALLOWED, local_sans.uri_allowed, remote_sans.uri_allowed))
+                    # elliptic_curves is case-insensitive (the platform returns UPPERCASE curves,
+                    # e.g. "P256", while users write them lowercase) and compared only when the
+                    # local spec lists curves.
+                    if local_kp.elliptic_curves and not _check_list_case_insensitive(
+                            remote_kp.elliptic_curves, local_kp.elliptic_curves):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_ELLIPTIC_CURVES, local_kp.elliptic_curves,
+                                                 remote_kp.elliptic_curves))
+
+                    if local_kp.key_types and not _check_key_types(remote_kp.key_types, local_kp.key_types):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_KEY_TYPES, local_kp.key_types, remote_kp.key_types))
+
+            # Validating Policy.SubjectAltNames. An empty local SANs block means 'unspecified':
+            # remote policy always carries SANs, so comparing would be a false positive.
+            if not _is_empty_object(local_p.subject_alt_names):
+                if _is_empty_object(remote_p.subject_alt_names):
+                    is_changed = True
+                    msgs.append(_get_empty_msg('Policy.SubjectAltNames', REMOTE))
+                else:
+                    local_sans = local_p.subject_alt_names
+                    remote_sans = remote_p.subject_alt_names
+                    p = '%s.%s.' % (FIELD_POLICY, FIELD_SUBJECT_ALT_NAMES)
+
+                    _append_value(value_fields, p + FIELD_DNS_ALLOWED, local_sans.dns_allowed, remote_sans.dns_allowed)
+                    _append_value(value_fields, p + FIELD_EMAIL_ALLOWED, local_sans.email_allowed,
+                                  remote_sans.email_allowed)
+                    _append_value(value_fields, p + FIELD_IP_ALLOWED, local_sans.ip_allowed, remote_sans.ip_allowed)
+                    _append_value(value_fields, p + FIELD_UPN_ALLOWED, local_sans.upn_allowed, remote_sans.upn_allowed)
+                    _append_value(value_fields, p + FIELD_URI_ALLOWED, local_sans.uri_allowed, remote_sans.uri_allowed)
+
+                    # uri_protocols / ip_constraints were previously never diffed, so changing the
+                    # allowed protocols or IP constraints (with the *_allowed flag unchanged) was a
+                    # silently missed drift. Compare only when the local spec lists them. Protocol
+                    # tokens (https/ldaps) are matched case-insensitively, like the curve/key-type
+                    # comparisons above.
+                    if local_sans.uri_protocols and not _check_list_case_insensitive(
+                            remote_sans.uri_protocols, local_sans.uri_protocols):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_URI_PROTOCOLS, local_sans.uri_protocols,
+                                                 remote_sans.uri_protocols))
+                    _append_list(list_fields, p + FIELD_IP_CONSTRAINTS, local_sans.ip_constraints,
+                                 remote_sans.ip_constraints)
 
     # Validating Defaults
-    empty_local_d = _is_empty_object(local_ps.defaults)
-    empty_remote_d = _is_empty_object(remote_ps.defaults)
-    if empty_local_d and not empty_remote_d:
-        is_changed = True
-        msgs.append(_get_empty_msg('Defaults', LOCAL))
-    elif not empty_local_d and empty_remote_d:
-        is_changed = True
-        msgs.append(_get_empty_msg('Defaults', REMOTE))
-    elif not empty_local_d and not empty_remote_d:
-        local_d = local_ps.defaults
-        remote_d = remote_ps.defaults
-        p = '%s.' % FIELD_DEFAULTS
-
-        value_fields.append((p + FIELD_DEFAULT_DOMAIN, local_d.domain, remote_d.domain))
-        value_fields.append((p + FIELD_DEFAULT_AUTOINSTALLED, local_d.auto_installed, remote_d.auto_installed))
-
-        # Validating Defaults.DefaultSubject
-        empty_local_ds = _is_empty_object(local_d.subject)
-        empty_remote_ds = _is_empty_object(remote_d.subject)
-        if empty_local_ds and not empty_remote_ds:
+    if not _is_empty_object(local_ps.defaults):
+        if _is_empty_object(remote_ps.defaults):
             is_changed = True
-            msgs.append(_get_empty_msg('Defaults.DefaultSubject', LOCAL))
-        elif not empty_local_ds and empty_remote_ds:
-            is_changed = True
-            msgs.append(_get_empty_msg('Defaults.DefaultSubject', REMOTE))
-        elif not empty_local_ds and not empty_remote_ds:
-            local_ds = local_d.subject
-            remote_ds = remote_d.subject
-            p = '%s.%s.' % (FIELD_DEFAULTS, FIELD_DEFAULT_SUBJECT)
+            msgs.append(_get_empty_msg('Defaults', REMOTE))
+        else:
+            local_d = local_ps.defaults
+            remote_d = remote_ps.defaults
+            p = '%s.' % FIELD_DEFAULTS
 
-            list_fields.append((p + FIELD_ORG_UNITS, local_ds.org_units, remote_ds.org_units))
+            _append_value(value_fields, p + FIELD_DEFAULT_DOMAIN, local_d.domain, remote_d.domain)
+            _append_value(value_fields, p + FIELD_DEFAULT_AUTOINSTALLED, local_d.auto_installed,
+                          remote_d.auto_installed)
 
-            value_fields.append((p + FIELD_DEFAULT_ORG, local_ds.org, remote_ds.org))
-            value_fields.append((p + FIELD_DEFAULT_LOCALITY, local_ds.locality, remote_ds.locality))
-            value_fields.append((p + FIELD_DEFAULT_STATE, local_ds.state, remote_ds.state))
-            value_fields.append((p + FIELD_DEFAULT_COUNTRY, local_ds.country, remote_ds.country))
+            # Validating Defaults.DefaultSubject
+            if not _is_empty_object(local_d.subject):
+                if _is_empty_object(remote_d.subject):
+                    is_changed = True
+                    msgs.append(_get_empty_msg('Defaults.DefaultSubject', REMOTE))
+                else:
+                    local_ds = local_d.subject
+                    remote_ds = remote_d.subject
+                    p = '%s.%s.' % (FIELD_DEFAULTS, FIELD_DEFAULT_SUBJECT)
 
-        # Validating Defaults.DefaultKeyPair
-        empty_local_dkp = _is_empty_object(local_d.key_pair)
-        empty_remote_dkp = _is_empty_object(remote_d.key_pair)
-        if empty_local_dkp and not empty_remote_dkp:
-            is_changed = True
-            msgs.append(_get_empty_msg('Defaults.DefaultKeyPair', LOCAL))
-        elif not empty_local_dkp and empty_remote_dkp:
-            is_changed = True
-            msgs.append(_get_empty_msg('Defaults.DefaultKeyPair', REMOTE))
-        elif not empty_local_dkp and not empty_remote_dkp:
-            local_dkp = local_d.key_pair
-            remote_dkp = remote_d.key_pair
-            p = '%s.%s.' % (FIELD_DEFAULTS, FIELD_DEFAULT_KEY_PAIR)
+                    _append_list(list_fields, p + FIELD_ORG_UNITS, local_ds.org_units, remote_ds.org_units)
 
-            value_fields.append((p + FIELD_DEFAULT_RSA_KEY_SIZE, local_dkp.rsa_key_size, remote_dkp.rsa_key_size))
-            value_fields.append((p + FIELD_DEFAULT_SERVICE_GENERATED, local_dkp.service_generated,
-                                 remote_dkp.service_generated))
+                    _append_value(value_fields, p + FIELD_DEFAULT_ORG, local_ds.org, remote_ds.org)
+                    _append_value(value_fields, p + FIELD_DEFAULT_LOCALITY, local_ds.locality, remote_ds.locality)
+                    _append_value(value_fields, p + FIELD_DEFAULT_STATE, local_ds.state, remote_ds.state)
+                    _append_value(value_fields, p + FIELD_DEFAULT_COUNTRY, local_ds.country, remote_ds.country)
 
-            # default elliptic_curve: None-safe, case-insensitive (see elliptic_curves above).
-            lc = local_dkp.elliptic_curve
-            rc = remote_dkp.elliptic_curve
-            if (lc.upper() if lc else lc) != (rc.upper() if rc else rc):
-                is_changed = True
-                msgs.append(_get_err_msg(p + FIELD_DEFAULT_ELLIPTIC_CURVE, local_dkp.elliptic_curve,
-                                         remote_dkp.elliptic_curve))
+            # Validating Defaults.DefaultKeyPair
+            if not _is_empty_object(local_d.key_pair):
+                if _is_empty_object(remote_d.key_pair):
+                    is_changed = True
+                    msgs.append(_get_empty_msg('Defaults.DefaultKeyPair', REMOTE))
+                else:
+                    local_dkp = local_d.key_pair
+                    remote_dkp = remote_d.key_pair
+                    p = '%s.%s.' % (FIELD_DEFAULTS, FIELD_DEFAULT_KEY_PAIR)
 
-            # default key_type: guard None before .upper() (DefaultKeyPair.key_type defaults to None,
-            # but this branch is reachable when only rsa_key_size or elliptic_curve is set).
-            lkt = local_dkp.key_type
-            rkt = remote_dkp.key_type
-            if (lkt.upper() if lkt else lkt) != (rkt.upper() if rkt else rkt):
-                is_changed = True
-                msgs.append(_get_err_msg(p + FIELD_DEFAULT_KEY_TYPE, local_dkp.key_type, remote_dkp.key_type))
+                    _append_value(value_fields, p + FIELD_DEFAULT_RSA_KEY_SIZE, local_dkp.rsa_key_size,
+                                  remote_dkp.rsa_key_size)
+                    _append_value(value_fields, p + FIELD_DEFAULT_SERVICE_GENERATED, local_dkp.service_generated,
+                                  remote_dkp.service_generated)
+
+                    # default elliptic_curve: None-safe, case-insensitive, compared only when set.
+                    lc = local_dkp.elliptic_curve
+                    rc = remote_dkp.elliptic_curve
+                    if lc is not None and lc.upper() != (rc.upper() if rc else rc):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_DEFAULT_ELLIPTIC_CURVE, local_dkp.elliptic_curve,
+                                                 remote_dkp.elliptic_curve))
+
+                    # default key_type: None-safe, case-insensitive, compared only when set.
+                    lkt = local_dkp.key_type
+                    rkt = remote_dkp.key_type
+                    if lkt is not None and lkt.upper() != (rkt.upper() if rkt else rkt):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_DEFAULT_KEY_TYPE, local_dkp.key_type, remote_dkp.key_type))
 
     for name, local, remote in list_fields:
         if not _check_list(remote, local):
@@ -327,8 +352,8 @@ def _check_list(remote_values, local_values):
 def _check_list_case_insensitive(remote_values, local_values):
     """
     Order-independent, case-insensitive multiset equality for lists of strings
-    (None treated as empty). Used for elliptic curves and key types, which the platform
-    returns upper-cased while users typically write them lower-cased.
+    (None treated as empty). Used for elliptic curves, key types and URI protocols, which the
+    platform may return upper-cased while users typically write them lower-cased.
 
     :rtype: bool
     """

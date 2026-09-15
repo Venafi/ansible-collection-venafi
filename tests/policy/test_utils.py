@@ -41,6 +41,7 @@ class FakeModule(object):
         self.fail_code = None
         self.exit_code = None
         self.warn = str
+        self.debug = str
         self.params = params if params else dict()
 
     def exit_json(self, **kwargs):

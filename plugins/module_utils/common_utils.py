@@ -214,7 +214,9 @@ def get_venafi_connection(module, platform=None):
         module.fail_json(msg="NGTS (Strata Cloud Manager) requires both 'client_id' and "
                              "'client_secret'. Missing: %s." % ", ".join(missing))
 
-    if user != '' or password != '':
+    # user/password both default to None; warn only when the user actually supplied them (a plain
+    # `!= ''` fired the deprecation notice on every token/access_token run, since None != '').
+    if user or password:
         module.warn("user/password authentication is deprecated. Use access token instead.")
 
     # Legacy Connection. Deprecated. Do not use

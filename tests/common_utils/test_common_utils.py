@@ -197,6 +197,43 @@ class TestRealSdkContract(unittest.TestCase):
         self.assertIsInstance(conn, FakeConnection)
 
 
+class TestDeprecationWarning(unittest.TestCase):
+    """The user/password deprecation warning must fire only when user/password are actually
+    supplied -- not on every token/access_token run (both params default to None, and the old
+    `!= ''` guard was truthy for None)."""
+
+    def setUp(self):
+        self.factory = RecordingFactory()
+        self._orig_vc = common_utils.venafi_connection
+        common_utils.venafi_connection = self.factory
+        self._orig_conn = common_utils.Connection
+
+        class _RecordingConnection(object):
+            def __init__(self, **kwargs):
+                pass
+
+        common_utils.Connection = _RecordingConnection
+
+    def tearDown(self):
+        common_utils.venafi_connection = self._orig_vc
+        common_utils.Connection = self._orig_conn
+
+    def test_no_warning_for_token_only(self):
+        module = FakeModule(base_params(token='apikey'))
+        get_venafi_connection(module)
+        self.assertEqual(module.warnings, [])
+
+    def test_no_warning_for_access_token(self):
+        module = FakeModule(base_params(url='https://tpp', access_token='tok'))
+        get_venafi_connection(module)
+        self.assertEqual(module.warnings, [])
+
+    def test_warning_when_user_password_supplied(self):
+        module = FakeModule(base_params(url='https://tpp', user='u', password='p'))
+        get_venafi_connection(module)
+        self.assertTrue(any('deprecated' in w for w in module.warnings))
+
+
 class TestFailIfNgts(unittest.TestCase):
     def test_blocks_when_ngts_creds_present(self):
         module = FakeModule(base_params(client_id='cid', client_secret='secret'))

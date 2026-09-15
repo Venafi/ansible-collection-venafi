@@ -29,7 +29,8 @@ options:
         description:
             - The url of the CyberArk platform to connect to.
             - B(Required) for CyberArk Certificate Manager, Self-Hosted.
-            - Optional for CyberArk Certificate Manager, SaaS. Only set the url when trying to reach a custom CyberArk Certificate Manager, SaaS platform (dev, QA, staging, etc.).
+            - Optional for CyberArk Certificate Manager, SaaS. Only set the url when trying to reach
+              a custom CyberArk Certificate Manager, SaaS platform (dev, QA, staging, etc.).
             - Optional for NGTS (Strata Cloud Manager). When omitted it defaults to the Palo Alto production endpoint.
             - For NGTS, set the url only for non-production environments.
         default: null

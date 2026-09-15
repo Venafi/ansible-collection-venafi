@@ -1,6 +1,5 @@
 import unittest
 
-from plugins.module_utils import common_utils
 from plugins.module_utils.common_utils import (
     get_revocation_reason,
     VenafiAnsibleError,
@@ -112,37 +111,31 @@ class TestBuildRequestTpp(unittest.TestCase, _PatchConnection):
     tearDown = _PatchConnection.tearDown
 
     def test_dn_path_retires_by_default(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              certificate_dn='\\VED\\Policy\\example\\cert')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', certificate_dn='\\VED\\Policy\\example\\cert')
         self.assertEqual(vcert.request.id, '\\VED\\Policy\\example\\cert')
         self.assertIsNone(vcert.request.thumbprint)
         self.assertTrue(vcert.request.disable)
 
     def test_dn_path_no_retire_keeps_object(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              certificate_dn='\\VED\\Policy\\example\\cert', no_retire=True)
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', certificate_dn='\\VED\\Policy\\example\\cert', no_retire=True)
         self.assertFalse(vcert.request.disable)
 
     def test_thumbprint_path_never_retires(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              thumbprint='AA:BB', no_retire=True)
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB', no_retire=True)
         self.assertEqual(vcert.request.thumbprint, 'AA:BB')
         self.assertIsNone(vcert.request.id)
         self.assertFalse(vcert.request.disable)
 
     def test_reason_is_mapped_to_int_code(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              thumbprint='AA:BB', reason='superseded')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB', reason='superseded')
         self.assertEqual(vcert.request.reason, 4)
 
     def test_ca_compromise_allowed_for_tpp(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              thumbprint='AA:BB', reason='ca-compromise')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB', reason='ca-compromise')
         self.assertEqual(vcert.request.reason, 2)
 
     def test_comments_passed_through(self):
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              thumbprint='AA:BB', comments='decommissioned host')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB', comments='decommissioned host')
         self.assertEqual(vcert.request.comments, 'decommissioned host')
 
 
@@ -174,13 +167,13 @@ class TestBuildRequestCloudNgts(unittest.TestCase, _PatchConnection):
         self.assertIn('ca-compromise', module.fail_code['msg'])
 
     def test_cloud_thumbprint_ok_and_disable_false(self):
-        _, vcert = self.build(token='apikey', thumbprint='AA:BB', reason='key-compromise')
+        dummy, vcert = self.build(token='apikey', thumbprint='AA:BB', reason='key-compromise')
         self.assertEqual(vcert.request.thumbprint, 'AA:BB')
         self.assertFalse(vcert.request.disable)
         self.assertEqual(vcert.request.reason, 1)
 
     def test_ca_account_name_set_when_provided(self):
-        _, vcert = self.build(token='apikey', thumbprint='AA:BB', ca_account_name='DigiCert')
+        dummy, vcert = self.build(token='apikey', thumbprint='AA:BB', ca_account_name='DigiCert')
         self.assertEqual(getattr(vcert.request, 'ca_account_name', None), 'DigiCert')
 
     def test_no_retire_warns_but_does_not_fail(self):
@@ -199,7 +192,7 @@ class TestRevokeAndDump(unittest.TestCase, _PatchConnection):
             'id': 'cert-123', 'thumbprint': 'AA:BB', 'serial': '0F:1E',
             'status': 'SUBMITTED', 'rejection_reason': None,
         }
-        _, vcert = self.build(token='apikey', thumbprint='AA:BB')
+        dummy, vcert = self.build(token='apikey', thumbprint='AA:BB')
         vcert.revoke()
         result = vcert.dump()
         self.assertTrue(result['changed'])
@@ -214,7 +207,7 @@ class TestRevokeAndDump(unittest.TestCase, _PatchConnection):
             'id': 'cert-123', 'thumbprint': 'AA:BB', 'serial': None,
             'status': 'REJECTED_APPROVAL', 'rejection_reason': 'Not authorized',
         }
-        _, vcert = self.build(token='apikey', thumbprint='AA:BB')
+        dummy, vcert = self.build(token='apikey', thumbprint='AA:BB')
         vcert.revoke()
         result = vcert.dump()
         self.assertEqual(result['status'], 'REJECTED_APPROVAL')
@@ -222,8 +215,7 @@ class TestRevokeAndDump(unittest.TestCase, _PatchConnection):
 
     def test_tpp_raw_body_dump(self):
         self.connector.response = {'CertificateDN': '\\VED\\Policy\\x', 'Requested': True}
-        _, vcert = self.build(url='https://tpp', access_token='tok',
-                              certificate_dn='\\VED\\Policy\\x')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', certificate_dn='\\VED\\Policy\\x')
         vcert.revoke()
         result = vcert.dump()
         self.assertTrue(result['changed'])
@@ -244,7 +236,7 @@ class TestRevokeAndDump(unittest.TestCase, _PatchConnection):
 
     def test_check_is_side_effect_free(self):
         # check() must not touch the backend (this is what guarantees safe check-mode).
-        _, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB')
+        dummy, vcert = self.build(url='https://tpp', access_token='tok', thumbprint='AA:BB')
         result = vcert.check()
         self.assertTrue(result['changed'])
         self.assertIn('AA:BB', result['changed_msg'])
