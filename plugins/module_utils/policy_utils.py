@@ -141,13 +141,17 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False):
             _append_value(value_fields, p + FIELD_WILDCARD_ALLOWED, local_p.wildcard_allowed,
                           remote_p.wildcard_allowed)
             _append_value(value_fields, p + FIELD_MAX_VALID_DAYS, local_p.max_valid_days, remote_p.max_valid_days)
-            # The vcert Policy constructor forces certificate_authority to DEFAULT_CA when the user
-            # omits it, so only compare when the local spec actually pinned a real (non-default) CA.
-            # (Comparing the *effective* local CA against a normalized built-in remote is a tracked
-            # follow-up; today an omitted CA that would rewrite a real remote CA is not flagged.)
-            if local_p.certificate_authority and local_p.certificate_authority != DEFAULT_CA:
-                _append_value(value_fields, p + FIELD_CERTIFICATE_AUTHORITY, local_p.certificate_authority,
-                              remote_p.certificate_authority)
+            # certificate_authority is always compared against the EFFECTIVE CA that set_policy will
+            # apply. The vcert SDK (like the Go/Terraform BuildCloudCitRequest) defaults an omitted
+            # CA to the built-in DEFAULT_CA and sends exactly that, so the diff must reflect the CA
+            # apply would set (declarative parity with vcert Go / terraform-provider-venafi). An
+            # omitted or explicit built-in CA that would reset a real remote CA is therefore reported
+            # as a change instead of being silently skipped; it converges after one apply.
+            effective_local_ca = local_p.certificate_authority or DEFAULT_CA
+            if not _check_value(remote_p.certificate_authority, effective_local_ca):
+                is_changed = True
+                msgs.append(_get_err_msg(p + FIELD_CERTIFICATE_AUTHORITY, effective_local_ca,
+                                         remote_p.certificate_authority))
             _append_value(value_fields, p + FIELD_AUTOINSTALLED, local_p.auto_installed, remote_p.auto_installed)
 
             # Validating Policy.Subject

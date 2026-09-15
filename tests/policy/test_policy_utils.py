@@ -112,12 +112,28 @@ class TestCurveCasing(unittest.TestCase):
         self.assertFalse(changed(loc, full_ps()))
 
 
-class TestCertAuthorityLandmine(unittest.TestCase):
-    def test_local_default_ca_is_ignored(self):
-        # User omits CA -> the SDK forces DEFAULT_CA; must not report a false change vs a real remote CA.
+class TestCertAuthority(unittest.TestCase):
+    """certificate_authority is compared as the EFFECTIVE CA that set_policy applies: the SDK (like
+    Go/Terraform BuildCloudCitRequest) defaults an omitted CA to the built-in DEFAULT_CA and sends
+    it, so the diff reflects the CA apply will set (declarative parity with vcert Go / terraform)."""
+
+    def test_effective_ca_reports_change_vs_real_remote(self):
+        # Omitted/built-in local CA -> applied as built-in -> a change against a real remote CA
+        # (previously this was silently skipped -- bug #4). Converges after one apply.
+        loc = full_ps()
+        loc.policy.certificate_authority = DEFAULT_CA  # what the SDK sets when the file omits it
+        self.assertTrue(changed(loc, full_ps()))       # remote is a real DIGICERT CA
+
+    def test_builtin_ca_matches_builtin_remote(self):
         loc = full_ps()
         loc.policy.certificate_authority = DEFAULT_CA
-        self.assertFalse(changed(loc, full_ps()))
+        rem = full_ps()
+        rem.policy.certificate_authority = DEFAULT_CA
+        self.assertFalse(changed(loc, rem))
+
+    def test_matching_real_ca_is_unchanged(self):
+        # full_ps() pins the same real CA on both sides.
+        self.assertFalse(changed(full_ps(), full_ps()))
 
     def test_genuine_ca_diff_detected(self):
         loc = full_ps()
@@ -171,10 +187,20 @@ class TestMinimalDeclarativeFiles(unittest.TestCase):
     the module reported 'changed' on every run for realistic minimal policy files."""
 
     def test_minimal_only_declared_fields_unchanged(self):
-        # Declares only domains + key_types (both matching remote); everything else omitted.
+        # Declares only domains + key_types; CA omitted -> effective built-in, so this is idempotent
+        # against a built-in-CA CIT. (Against a real-CA CIT the omitted CA resets it -> changed; see
+        # test_minimal_omitting_ca_reports_change_vs_real_ca_cit.)
         loc = PolicySpecification(policy=Policy(
             domains=['vfidev.com'], key_pair=KeyPair(key_types=['RSA', 'EC'])))
-        self.assertFalse(changed(loc, full_ps()))
+        rem = full_ps()
+        rem.policy.certificate_authority = DEFAULT_CA  # built-in CIT
+        self.assertFalse(changed(loc, rem))
+
+    def test_minimal_omitting_ca_reports_change_vs_real_ca_cit(self):
+        # Go/Terraform parity: omitting the CA on a real-CA CIT means "apply built-in" -> a change.
+        loc = PolicySpecification(policy=Policy(
+            domains=['vfidev.com'], key_pair=KeyPair(key_types=['RSA', 'EC'])))
+        self.assertTrue(changed(loc, full_ps()))  # remote CA is DIGICERT
 
     def test_minimal_still_detects_declared_drift(self):
         # A field the minimal file *does* declare must still be diffed (no over-skipping).
