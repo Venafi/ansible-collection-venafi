@@ -97,6 +97,32 @@ def _append_list(list_fields, name, local, remote):
         list_fields.append((name, local, remote))
 
 
+def _tpp_service_generated_changed(local_sg, remote_ps):
+    """
+    Self-Hosted (TPP) only: True when the local spec explicitly sets serviceGenerated to false
+    (policy.keyPair or defaults.keyPair) but the folder reports service-generated CSRs.
+
+    get_policy maps the folder's CsrGeneration to policy.keyPair.serviceGenerated=True when it is
+    locked and to defaults.keyPair.serviceGenerated=True when it is unlocked, but drops a
+    user-provided (false) value altogether. A plain lenient compare therefore reported 'unchanged'
+    for a local false while the folder still allowed service generation from the other block.
+    apply writes a user-provided CsrGeneration, which reads back as None on both blocks, so this
+    converges after one run. None-vs-false remains 'equal' (lenient) on TPP because false never
+    reads back.
+
+    :param bool local_sg: the local serviceGenerated value (None when omitted)
+    :param vcert.policy.PolicySpecification remote_ps:
+    :rtype: bool
+    """
+    if local_sg is not False:
+        return False
+    for block in (remote_ps.policy, remote_ps.defaults):
+        kp = block.key_pair if block else None
+        if kp and kp.service_generated is True:
+            return True
+    return False
+
+
 def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False, is_tpp=False):
     """
     Validates that all values present in the source vcert.policy.PolicySpecification match with
@@ -117,7 +143,9 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False, i
     :param bool is_tpp: True for Self-Hosted (TPP). Controls the certificate_authority comparison:
         the DEFAULT_CA effective-CA fallback is a Cloud/VaaS/NGTS concept, so on TPP an omitted or
         built-in local CA is not diffed against the folder's real value (which is "" when no CA is
-        locked), preventing perpetual false 'changed'.
+        locked), preventing perpetual false 'changed'. It also selects the serviceGenerated
+        comparison: tri-state (None = CSR upload and service generation both allowed) on
+        Cloud/VaaS/NGTS, and lenient plus _tpp_service_generated_changed on TPP.
     :rtype: tuple[bool, list[str]]
     """
     is_changed = False
@@ -201,8 +229,24 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False, i
                     remote_kp = remote_p.key_pair
                     p = '%s.%s.' % (FIELD_POLICY, FIELD_KEY_PAIR)
 
-                    _append_value(value_fields, p + FIELD_SERVICE_GENERATED, local_kp.service_generated,
-                                  remote_kp.service_generated)
+                    # serviceGenerated comparison is backend-dependent.
+                    local_sg = local_kp.service_generated
+                    if is_tpp:
+                        if _tpp_service_generated_changed(local_sg, remote_ps):
+                            is_changed = True
+                            msgs.append(_get_err_msg(p + FIELD_SERVICE_GENERATED, local_sg, True))
+                        else:
+                            _append_value(value_fields, p + FIELD_SERVICE_GENERATED, local_sg,
+                                          remote_kp.service_generated)
+                    elif local_sg is not None and local_sg != remote_kp.service_generated:
+                        # Cloud/VaaS & NGTS: tri-state. get_policy returns None when the CIT allows
+                        # BOTH CSR upload and service-generated keys, so None must not be coerced to
+                        # False: an explicit false (CSR upload only) or true (service keys only) vs
+                        # a both-allowed CIT is a real change that apply enforces. Converges after
+                        # one apply (build_cit_request sends exactly one of the two flags).
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_SERVICE_GENERATED, local_sg,
+                                                 remote_kp.service_generated))
                     _append_value(value_fields, p + FIELD_REUSE_ALLOWED, local_kp.reuse_allowed,
                                   remote_kp.reuse_allowed)
 
@@ -295,8 +339,15 @@ def check_policy_specification(local_ps, remote_ps, ignore_owners_users=False, i
 
                     _append_value(value_fields, p + FIELD_DEFAULT_RSA_KEY_SIZE, local_dkp.rsa_key_size,
                                   remote_dkp.rsa_key_size)
-                    _append_value(value_fields, p + FIELD_DEFAULT_SERVICE_GENERATED, local_dkp.service_generated,
-                                  remote_dkp.service_generated)
+                    # Cloud/VaaS & NGTS never read back nor apply defaults.keyPair.serviceGenerated
+                    # (always None remotely), so the lenient compare is kept there.
+                    if is_tpp and _tpp_service_generated_changed(local_dkp.service_generated, remote_ps):
+                        is_changed = True
+                        msgs.append(_get_err_msg(p + FIELD_DEFAULT_SERVICE_GENERATED, local_dkp.service_generated,
+                                                 True))
+                    else:
+                        _append_value(value_fields, p + FIELD_DEFAULT_SERVICE_GENERATED, local_dkp.service_generated,
+                                      remote_dkp.service_generated)
 
                     # default elliptic_curve: None-safe, case-insensitive, compared only when set.
                     lc = local_dkp.elliptic_curve

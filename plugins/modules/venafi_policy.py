@@ -25,7 +25,7 @@ short_description: Creates or deletes policies on CyberArk platforms
 description:
     - CyberArk policy management module for working with CyberArk Certificate Manager, SaaS,
       CyberArk Certificate Manager, Self-Hosted, and Strata Cloud Manager (NGTS).
-    - It allows to create a policy at I(zone) on the CyberArk platform from a file defined by I(policy_spec_path).
+    - It allows to create a policy at I(zone) on the CyberArk platform from a file defined by I(path).
     - NGTS (Strata Cloud Manager) is selected by supplying the OAuth2 service-account credentials
       (I(client_id), I(client_secret), and I(tsg_id) or I(scope)). NGTS has no Application or owner
       layer, so the policy's I(users) and I(owners) are ignored and read back empty.
@@ -39,15 +39,20 @@ options:
             - Self-Hosted (TPP) uses a policy-folder DN (for example C(example\\policy)); SaaS uses
               C(ApplicationName\\IssuingTemplateAlias); NGTS (Strata Cloud Manager) uses the
               issuing-template (CIT) alias only, with no application split.
+            - On SaaS, issuing templates are shared by all Applications and found by name. If an issuing
+              template with the zone's alias already exists but is not assigned to the Application, applying
+              the policy updates that template, which changes it for every Application that uses it, and
+              assigns it to the Application. Check mode reports this case as creating the policy.
         required: true
         type: str
-    policy_spec_path:
+    path:
         description:
             - The path in the host of the Policy Specification file.
             - When defined it will be used to create a new Policy in the CyberArk platform located at I(zone).
             - Ignored when I(state=absent).
         default: null
         type: path
+        aliases: [ policy_spec_path ]
 seealso:
     - module: venafi.machine_identity.venafi_certificate
 extends_documentation_fragment:
@@ -63,7 +68,7 @@ EXAMPLES = '''
   tasks:
     - name: Create or update the policy folder
       venafi.machine_identity.venafi_policy:
-        url: 'https://tpp.example.com/vedsdk'
+        url: 'https://tpp.example.com'
         access_token: !vault |
             $ANSIBLE_VAULT;1.1;AES256
         zone: 'example\\policy'
@@ -119,7 +124,10 @@ updated:
     sample: My_App_to_update\\my_policy_to_update
 '''
 
+import ast
+import json
 import os
+import re
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common.text.converters import to_native
@@ -136,12 +144,17 @@ except ImportError:
 
 HAS_VCERT = True
 try:
+    from requests.exceptions import RequestException
     from vcert.errors import VenafiError, VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior
     from vcert.parser import json_parser, yaml_parser
+    from vcert.connection_cloud import CloudConnection
+    from vcert.connection_ngts import NGTSConnection
     from vcert.connection_tpp_abstract import AbstractTPPConnection
+    from vcert.policy.policy_spec import DEFAULT_CA
 except ImportError:
     HAS_VCERT = False
-    AbstractTPPConnection = ()  # isinstance(..., ()) is always False when vcert is unavailable
+    # isinstance(..., ()) is always False when vcert is unavailable
+    AbstractTPPConnection = CloudConnection = NGTSConnection = ()
 
 F_TEST_MODE = 'test_mode'
 F_CHANGED = 'changed'
@@ -149,10 +162,46 @@ F_CHANGED_MSGS = 'changed_msgs'
 F_STATE = 'state'
 F_FORCE = 'force'
 F_ZONE = 'zone'
+F_PATH = 'path'
 F_PS_PATH = 'policy_spec_path'
 F_POLICY_CREATED = 'created'
 F_POLICY_UPDATED = 'updated'
 F_POLICY_DELETED = 'deleted'
+
+# SaaS error codes for "application or issuing template not found": 20215 (no Application with that name) and
+# 20216 (no issuing template with that alias assigned to the Application), both sent with HTTP 404, and the
+# older 10051 (Go: cloud.parseCertificateTemplateResult)
+SAAS_ZONE_NOT_FOUND_CODES = (10051, 20215, 20216)
+# vcert's process_server_response() error text: "Server status: <code> URL: <url> Response: <bytes repr>"
+SERVER_ERROR_RE = re.compile(r'Server status: (\d+)\s+URL: (\S+)\s+Response: (.*)', re.DOTALL)
+
+
+def _is_saas_zone_not_found(connection, error):
+    """
+    Returns True when error is SaaS's answer for a missing Application or issuing template to the template
+    read that get_policy performs. SaaS reports it as an HTTP error, which vcert raises as a
+    VenafiConnectionError. It counts as not found only when the response is a JSON error body carrying one of
+    SAAS_ZONE_NOT_FOUND_CODES and the status is not 401/403. Everything else is a real error, including an
+    HTML or plain-text error page (e.g. the web server's 400 for a malformed name, or 401 "Invalid API key").
+    NGTS and Self-Hosted report a missing policy with a plain VenafiError, so they never match here.
+
+    :param connection: the vcert connection used to read the policy
+    :param Exception error: the exception raised by get_policy
+    :rtype: bool
+    """
+    if not isinstance(connection, CloudConnection) or isinstance(connection, NGTSConnection) \
+            or not isinstance(error, VenafiConnectionError):
+        return False
+    match = SERVER_ERROR_RE.search(to_native(error))
+    if not match or '/applications/' not in match.group(2) or '/certificateissuingtemplates/' not in match.group(2):
+        return False
+    if int(match.group(1)) in (401, 403):
+        return False
+    try:
+        errors = json.loads(ast.literal_eval(match.group(3).strip())).get('errors') or []
+        return any(err.get('code') in SAAS_ZONE_NOT_FOUND_CODES for err in errors)
+    except (ValueError, SyntaxError, TypeError, AttributeError):
+        return False
 
 
 class VPolicyManagement:
@@ -164,10 +213,10 @@ class VPolicyManagement:
         self.state = module.params[F_STATE]
         self.force = module.params[F_FORCE]
         self.zone = module.params[F_ZONE]
-        # F_PS_PATH is the alias 'policy_spec_path'; the canonical argspec key is 'path'. When the
-        # user omits it (e.g. the documented state=absent case) Ansible does not populate the alias
-        # key, so a direct module.params[F_PS_PATH] raises KeyError. Use .get() -> None instead.
-        self.local_ps = module.params.get(F_PS_PATH)
+        # Read the canonical argspec key 'path': Ansible always fills it (None when omitted, e.g. the
+        # documented state=absent case) and applies type=path expansion (~, $VAR). The alias key
+        # 'policy_spec_path' is only present, unexpanded, when the user spelled the alias.
+        self.local_ps = module.params.get(F_PATH)
         self.connection = get_venafi_connection(module)
         # Self-Hosted (TPP) needs a different certificateAuthority comparison than Cloud/NGTS
         # (DEFAULT_CA is a Cloud-only value). Detect it authoritatively from the connection object.
@@ -209,11 +258,15 @@ class VPolicyManagement:
         msgs = []
         try:
             remote_ps = self.connection.get_policy(self.zone)
-        except (VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior) as e:
+        except (VenafiConnectionError, AuthenticationError, ServerUnexptedBehavior, RequestException) as e:
             # Connection/auth/server errors are not "policy absent". Treating them as a missing
             # policy would mask an NGTS token_url/credential problem as a spurious "creating policy"
-            # (changed=True) and defeat idempotency, so surface them instead of swallowing.
-            self.module.fail_json(msg='Failed to read policy %s: %s' % (self.zone, to_native(e)))
+            # (changed=True) and defeat idempotency, so surface them instead of swallowing. The one
+            # exception is SaaS's HTTP answer for a missing Application/issuing template.
+            if not _is_saas_zone_not_found(self.connection, e):
+                self.module.fail_json(msg='Failed to read policy %s: %s' % (self.zone, to_native(e)))
+            self.module.debug('Policy %s not found. Error: %s' % (self.zone, to_native(e)))
+            remote_ps = None
         except VenafiError as e:
             self.module.debug('Get policy %s failed. Assuming Policy does not exist. Error: %s'
                               % (self.zone, to_native(e)))
@@ -293,6 +346,11 @@ class VPolicyManagement:
         """
         local_ps = self._read_policy_spec_file(self.local_ps)
         if local_ps:
+            if self.is_tpp and local_ps.policy and local_ps.policy.certificate_authority == DEFAULT_CA:
+                # The parser fills an omitted certificateAuthority with the SaaS/NGTS built-in CA, which
+                # is not a Self-Hosted CA. Do not write it to the folder; leave the CA to be inherited,
+                # as the Go connector does when the file sets no CA.
+                local_ps.policy.certificate_authority = None
             try:
                 self.connection.set_policy(self.zone, local_ps)
             except Exception as e:

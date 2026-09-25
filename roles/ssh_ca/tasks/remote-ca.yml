@@ -23,4 +23,4 @@
 
 - name: "Set fact"
   ansible.builtin.set_fact:
-    ssh_ca_principals_fact: "{{ ca_out.ssh_ca_principals | trim }}"
+    ssh_ca_principals_fact: "{{ ssh_ca_out.ssh_ca_principals | trim }}"

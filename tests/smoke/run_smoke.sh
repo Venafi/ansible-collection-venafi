@@ -89,14 +89,14 @@ for m in venafi_certificate venafi_certificate_revoke venafi_policy venafi_ssh_c
   if "$ADOC" "venafi.machine_identity.$m" >/dev/null 2>"$WORK/doc_$m.err"; then
     echo "  ok   $m"
   else
-    echo "  FAIL $m"; cat "$WORK/doc_$m.err" | filter | head -3; doc_ok=FAIL
+    echo "  FAIL $m"; filter < "$WORK/doc_$m.err" | head -3; doc_ok=FAIL
   fi
 done
 record "ansible-doc (5 modules)" "$doc_ok"
 
 # ---- 3. functional playbook ------------------------------------------------------------------
 say "ansible-playbook smoke.yml"
-if "$APLAY" "$HERE/playbooks/smoke.yml" 2>&1 | filter; then
+if "$APLAY" "$HERE/playbooks/smoke.yml" -e "smoke_out=$WORK/playbook-out" 2>&1 | filter; then
   record "playbook smoke.yml" PASS
 else
   record "playbook smoke.yml" FAIL
@@ -104,7 +104,7 @@ fi
 
 # ---- 4. pytest (packaging + behaviour + regression gates) ------------------------------------
 say "pytest test_artifact.py"
-if "$WORK/venv/bin/pytest" -q "$HERE/test_artifact.py" 2>&1 | filter; then
+if "$WORK/venv/bin/pytest" -q -p no:cacheprovider "$HERE/test_artifact.py" 2>&1 | filter; then
   record "pytest test_artifact.py" PASS
 else
   record "pytest test_artifact.py" FAIL
@@ -119,8 +119,8 @@ for r in "${RESULTS[@]}"; do
   else printf '  \033[31mFAIL\033[0m  %s\n' "$name"; fail=1; fi
 done
 echo
-echo "pytest includes TestRegressions (four previously-confirmed defects, now fixed);"
-echo "a failure there means one of A/B/C/D has re-regressed."
+echo "pytest includes TestRegressions (previously-confirmed defects A-I, now fixed);"
+echo "a failure there means one of them has re-regressed."
 echo
 if [[ "$fail" == 0 ]]; then echo "RESULT: smoke suite GREEN"; else echo "RESULT: smoke suite has FAILURES (see above)"; fi
 exit "$fail"

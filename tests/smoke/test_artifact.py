@@ -25,6 +25,7 @@ backend, credentials, or network are required.
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 
@@ -46,7 +47,7 @@ MODULES = [
     "venafi_ssh_certificate",
 ]
 
-STRAY_PATTERNS = (".claude", ".github", "CLAUDE.md", ".DS_Store", "galaxy.yml",
+STRAY_PATTERNS = (".claude", ".github", "CLAUDE.md", ".DS_Store", ".pytest_cache", "galaxy.yml",
                   "__pycache__", ".pyc", "vault-password", "_credentials")
 
 needs_artifact = pytest.mark.skipif(
@@ -69,16 +70,17 @@ def _module_path(name):
     )
 
 
-def run_module(name, args):
+def run_module(name, args, extra_env=None):
     """Invoke an installed collection module standalone and return (rc, result_dict, stderr).
 
     result_dict is None when the module crashed with an uncaught traceback (no JSON emitted).
     """
     env = dict(os.environ, PYTHONPATH=COLLECTIONS_PATH)
+    env.update(extra_env or {})
     proc = subprocess.run(
         [sys.executable, _module_path(name)],
         input=json.dumps({"ANSIBLE_MODULE_ARGS": args}),
-        text=True, capture_output=True, env=env,
+        text=True, capture_output=True, env=env, check=False,
     )
     result = None
     for line in reversed(proc.stdout.strip().splitlines()):
@@ -90,6 +92,35 @@ def run_module(name, args):
             except ValueError:
                 continue
     return proc.returncode, result, proc.stderr
+
+
+# shims/sitecustomize.py: FakeConnection returns cert.key=None for a provided CSR (like the real
+# connectors) and logs every issuance to VENAFI_FAKE_ISSUE_LOG.
+SHIMS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shims")
+
+
+def run_certificate(tmp_path, args, check=False):
+    """venafi_certificate on the fake backend with the shim; returns (result, stderr, issuances so far)."""
+    log = tmp_path / "issued.log"
+    args = dict({"test_mode": True, "common_name": "keypath.smoke", "zone": ""}, **args)
+    if check:
+        args["_ansible_check_mode"] = True
+    rc, res, err = run_module("venafi_certificate", args, {
+        "PYTHONPATH": os.pathsep.join([SHIMS, COLLECTIONS_PATH]), "VENAFI_FAKE_ISSUE_LOG": str(log)})
+    return res, err, len(log.read_text().splitlines()) if log.exists() else 0
+
+
+def write_csr(path, cn):
+    """A user-provided CSR (its key stays outside the module)."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import NameOID
+    csr = x509.CertificateSigningRequestBuilder().subject_name(
+        x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])).sign(
+        ec.generate_private_key(ec.SECP256R1()), hashes.SHA256())
+    path.write_bytes(csr.public_bytes(serialization.Encoding.PEM))
+    return path
 
 
 class FakeModule(object):
@@ -323,6 +354,48 @@ class TestFunctionalEnroll:
         assert res is not None and res.get("failed") is True
         assert "must be one of" in res.get("msg", "")
 
+    def test_lowercase_curve_and_ec_type_accepted_idempotent(self, tmp_path):
+        """M14: the 1.3.1 spellings (type EC, curve p256) are accepted and stay idempotent,
+        also when the casing changes between runs and in check mode."""
+        cert = tmp_path / "lc.crt"
+        key = tmp_path / "lc.key"
+        args = {"test_mode": True, "common_name": "lc.smoke", "cert_path": str(cert),
+                "privatekey_path": str(key), "privatekey_type": "EC",
+                "privatekey_curve": "p256", "zone": ""}
+        rc, res1, err1 = run_module("venafi_certificate", args)
+        assert res1 is not None and res1.get("changed") is True, (err1, res1)
+        assert res1.get("privatekey_curve") == "P256" and res1.get("privatekey_type") == "ECDSA"
+        assert self._classify(str(key)) == "EC:secp256r1"
+        rc, res2, err2 = run_module("venafi_certificate", args)
+        assert res2 is not None and res2.get("changed") is False, (err2, res2)
+        args.update({"privatekey_type": "ecdsa", "privatekey_curve": "P-256", "_ansible_check_mode": True})
+        rc, res3, err3 = run_module("venafi_certificate", args)
+        assert res3 is not None and not res3.get("failed") and res3.get("changed") is False, (err3, res3)
+
+    def test_uppercase_ed25519_accepted(self, tmp_path):
+        key = tmp_path / "edu.key"
+        rc, res, err = run_module("venafi_certificate", {
+            "test_mode": True, "common_name": "edu.smoke", "cert_path": str(tmp_path / "edu.crt"),
+            "privatekey_path": str(key), "privatekey_type": "ECDSA",
+            "privatekey_curve": "ED25519", "zone": "",
+        })
+        assert res is not None and res.get("changed") is True, (err, res)
+        assert self._classify(str(key)) == "Ed25519"
+
+    def test_invalid_privatekey_curve_clean_error(self, tmp_path):
+        cert = tmp_path / "bc.crt"
+        key = tmp_path / "bc.key"
+        rc, res, err = run_module("venafi_certificate", {
+            "test_mode": True, "common_name": "bc.smoke", "cert_path": str(cert),
+            "privatekey_path": str(key), "privatekey_type": "ECDSA",
+            "privatekey_curve": "P999", "zone": "",
+        })
+        assert "Traceback" not in err, err
+        assert res is not None and res.get("failed") is True, (err, res)
+        assert "privatekey_curve" in res.get("msg", "") and "must be one of" in res.get("msg", "")
+        assert "case-insensitive" in res.get("msg", "")  # module-level check, not argspec choices
+        assert not cert.exists() and not key.exists()  # failed before any request / write
+
     def test_policy_test_mode_fails_fast(self, tmp_path):
         spec = tmp_path / "p.json"
         spec.write_text("{}")
@@ -349,6 +422,12 @@ class TestFunctionalEnroll:
 #   B  policy_utils.py        _get_err_msg used to TypeError on a None remote list (uri/ip/domains)
 #   C  policy_utils.py        effective-CA compare used to churn on TPP folders that lock no CA
 #   D  venafi_certificate.py  default local CSR without privatekey_path used to TypeError
+# Private-key path follow-ups to D (found in 1.4.0 RC2; E-I use shims/sitecustomize.py):
+#   E  provided CSR without privatekey_path re-enrolled + failed validation on every run
+#   F  key path == cert/chain path destroyed the certificate (now fails before enrolling)
+#   G  PKCS#12 without privatekey_path wrote an extra <cert>.key next to the .p12
+#   H  encrypted/unreadable key crashed with a TypeError/ValueError traceback
+#   I  mode (e.g. 0644) left group/other bits on the key -> re-enroll + failure on every run
 # --------------------------------------------------------------------------------------------
 @needs_installed
 class TestRegressions:
@@ -366,7 +445,7 @@ class TestRegressions:
             subject_alt_names=SubjectAltNames(uri_allowed=True, uri_protocols=["https"])))
         remote = PolicySpecification(policy=Policy(
             subject_alt_names=SubjectAltNames(uri_allowed=True, uri_protocols=None)))
-        changed, _ = check_policy_specification(local, remote, ignore_owners_users=False)
+        changed = check_policy_specification(local, remote, ignore_owners_users=False)[0]
         assert changed is True  # reports drift instead of raising TypeError
 
     def test_c_tpp_ca_backend_aware(self):
@@ -401,6 +480,70 @@ class TestRegressions:
         # key written to the derived path (cert base + .key), per the documented behavior
         assert res.get("privatekey_filename") == str(tmp_path / "nopk.key")
         assert (tmp_path / "nopk.key").exists()
+
+    @pytest.mark.parametrize("csr_origin", ["provided", None])  # None: auto-switch, csr_path exists
+    def test_e_provided_csr_without_privatekey_path_is_idempotent(self, tmp_path, csr_origin):
+        args = {"cert_path": str(tmp_path / "c.crt"),
+                "csr_path": str(write_csr(tmp_path / "csr.pem", "keypath.smoke"))}
+        if csr_origin:
+            args["csr_origin"] = csr_origin
+        res, err, issued = run_certificate(tmp_path, args)
+        assert res is not None and res.get("changed") is True and not res.get("failed"), (err, res)
+        assert not res.get("privatekey_filename")
+        for extra, check in (({}, False), ({}, True), ({"renew": False}, False)):
+            res, err, issued = run_certificate(tmp_path, dict(args, **extra), check=check)
+            assert res is not None and res.get("changed") is False and not res.get("failed"), (extra, check, err, res)
+        assert issued == 1  # one enrollment, not one per run
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["c.crt", "csr.pem", "issued.log"]
+
+    @pytest.mark.parametrize("paths", [
+        {"cert_path": "c.key"},                              # derived key path == cert_path
+        {"cert_path": "c.crt", "chain_path": "c.key"},       # derived key path == chain_path
+        {"cert_path": "c.crt", "privatekey_path": "c.crt"},  # explicit key path == cert_path
+        {"cert_path": "c.crt", "chain_path": "./c.key"},     # same file, different spelling
+    ])
+    def test_f_key_path_collision_fails_before_enrolling(self, tmp_path, paths):
+        args = dict((k, os.path.join(str(tmp_path), v)) for k, v in paths.items())
+        for check in (True, False):
+            res, err, issued = run_certificate(tmp_path, args, check=check)
+            assert "Traceback" not in err, err
+            assert res is not None and res.get("failed") is True, (check, err, res)
+            assert "same file as the certificate or chain" in res.get("msg", "")
+        assert issued == 0 and not list(tmp_path.iterdir())
+
+    def test_g_pkcs12_without_privatekey_path_writes_only_p12(self, tmp_path):
+        args = {"cert_path": str(tmp_path / "c.p12"), "use_pkcs12_format": True}
+        res, err, issued = run_certificate(tmp_path, args)
+        assert res is not None and res.get("changed") is True and not res.get("failed"), (err, res)
+        res, err, issued = run_certificate(tmp_path, args)
+        assert res is not None and res.get("changed") is False and not res.get("failed"), (err, res)
+        assert issued == 1
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["c.p12", "issued.log"]  # no c.key
+        assert stat.S_IMODE((tmp_path / "c.p12").stat().st_mode) == 0o600
+
+    def test_h_unreadable_private_key_fails_cleanly(self, tmp_path):
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        key = tmp_path / "c.key"  # encrypted key at the derived path, no privatekey_passphrase given
+        pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+            serialization.BestAvailableEncryption(b"secret"))
+        key.write_bytes(pem)
+        res, err, issued = run_certificate(tmp_path, {"cert_path": str(tmp_path / "c.crt")})
+        assert "Traceback" not in err, err
+        assert res is not None and res.get("failed") is True, (err, res)
+        assert "Failed to load private key file" in res.get("msg", "")
+        assert issued == 0 and key.read_bytes() == pem  # not re-enrolled, key not overwritten
+
+    def test_i_mode_0644_keeps_private_key_0600_and_is_idempotent(self, tmp_path):
+        args = {"cert_path": str(tmp_path / "c.crt"), "mode": "0644"}
+        res, err, issued = run_certificate(tmp_path, args)
+        assert res is not None and res.get("changed") is True and not res.get("failed"), (err, res)
+        res, err, issued = run_certificate(tmp_path, args)
+        assert res is not None and res.get("changed") is False and not res.get("failed"), (err, res)
+        assert issued == 1
+        assert stat.S_IMODE((tmp_path / "c.key").stat().st_mode) == 0o600
+        assert stat.S_IMODE((tmp_path / "c.crt").stat().st_mode) == 0o644
 
 
 if __name__ == "__main__":

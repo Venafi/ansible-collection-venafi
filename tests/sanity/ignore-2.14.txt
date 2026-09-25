@@ -7,4 +7,3 @@ plugins/modules/venafi_certificate.py import-3.11!skip
 plugins/modules/venafi_certificate.py import-3.9!skip
 plugins/modules/venafi_certificate.py validate-modules:import-error
 plugins/modules/venafi_certificate.py validate-modules:return-syntax-error
-plugins/modules/venafi_policy.py validate-modules:undocumented-parameter

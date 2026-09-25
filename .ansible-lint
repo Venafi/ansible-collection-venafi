@@ -9,7 +9,7 @@
 #     including the third-party (F5/Citrix/IIS) sample playbooks that reference modules
 #     from collections not installed in the lint environment.
 #   * sanity — the entries in tests/sanity/ignore-*.txt (validate-modules:import-error,
-#     import-3.x!skip, return-syntax-error, undocumented-parameter) are REQUIRED by the
+#     import-3.x!skip, return-syntax-error) are REQUIRED by the
 #     `ansible-test sanity` workflow: the modules import the vcert SDK, which is not
 #     importable in the sanity/lint environment. Removing them to satisfy ansible-lint
 #     would turn the real sanity gate red.

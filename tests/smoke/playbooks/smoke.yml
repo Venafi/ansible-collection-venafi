@@ -131,7 +131,7 @@
         fail_msg: "VC-59232 #2 regression: default local CSR did not write the private key"
 
     # --- negative / fail-fast paths ----------------------------------------------------------
-    - name: invalid privatekey_type -> clean choices error (argspec hardening)
+    - name: invalid privatekey_type -> clean validation error (key parameter hardening)
       venafi.machine_identity.venafi_certificate:
         test_mode: true
         common_name: bad.smoke.example
@@ -146,6 +146,140 @@
         that:
           - bad_type is failed
           - "'must be one of' in bad_type.msg"
+
+    # --- key parameters are case-insensitive (1.3.1 spellings type EC / curve p256 keep working)
+    - name: enroll type EC + curve p256 (first run)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: lc.smoke.example
+        cert_path: "{{ smoke_out }}/lc.crt"
+        privatekey_path: "{{ smoke_out }}/lc.key"
+        privatekey_type: EC
+        privatekey_curve: p256
+        zone: ""
+      register: lc1
+
+    - name: enroll type EC + curve p256 (second run - must be idempotent)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: lc.smoke.example
+        cert_path: "{{ smoke_out }}/lc.crt"
+        privatekey_path: "{{ smoke_out }}/lc.key"
+        privatekey_type: EC
+        privatekey_curve: p256
+        zone: ""
+      register: lc2
+
+    - name: same certificate as ECDSA / P256 in check mode (other casing - must be unchanged)
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: lc.smoke.example
+        cert_path: "{{ smoke_out }}/lc.crt"
+        privatekey_path: "{{ smoke_out }}/lc.key"
+        privatekey_type: ECDSA
+        privatekey_curve: P256
+        zone: ""
+      check_mode: true
+      register: lc3
+
+    - name: enroll Ed25519 with curve ED25519
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: edu.smoke.example
+        cert_path: "{{ smoke_out }}/edu.crt"
+        privatekey_path: "{{ smoke_out }}/edu.key"
+        privatekey_type: ECDSA
+        privatekey_curve: ED25519
+        zone: ""
+      register: edu1
+
+    - name: invalid privatekey_curve -> clean error before any request
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: badcurve.smoke.example
+        cert_path: "{{ smoke_out }}/badcurve.crt"
+        privatekey_type: ECDSA
+        privatekey_curve: P999
+        zone: ""
+      register: bad_curve
+      ignore_errors: true
+
+    - name: stat the invalid-curve certificate
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/badcurve.crt"
+      register: bad_curve_crt
+
+    - name: assert case-insensitive key parameters
+      ansible.builtin.assert:
+        that:
+          - lc1.changed
+          - lc1.privatekey_type == 'ECDSA'
+          - lc1.privatekey_curve == 'P256'
+          - not lc2.changed
+          - lc3 is not failed
+          - not lc3.changed
+          - edu1.changed
+          - edu1.privatekey_curve == 'ed25519'
+          - bad_curve is failed
+          - "'must be one of' in bad_curve.msg"
+          - "'privatekey_curve' in bad_curve.msg"
+          - not bad_curve_crt.stat.exists
+        fail_msg: "case-insensitive privatekey_type/privatekey_curve regression"
+
+    # --- certificate role, remote execution: the requested curve must reach the module --------
+    - name: write test_mode credentials file for the certificate role
+      ansible.builtin.copy:
+        dest: "{{ smoke_out }}/role-creds.yml"
+        content: "test_mode: true\nzone: \"\"\n"
+        mode: "0600"
+
+    - name: create the role certificate directory (the remote path does not create it)
+      ansible.builtin.file:
+        path: "{{ smoke_out }}/role"
+        state: directory
+        mode: "0755"
+
+    - name: certificate role, remote execution, ECDSA P256 (first run)
+      ansible.builtin.include_role:
+        name: venafi.machine_identity.certificate
+      vars: &role_remote_vars
+        credentials_file: "{{ smoke_out }}/role-creds.yml"
+        certificate_common_name: role.smoke.example
+        certificate_cert_dir: "{{ smoke_out }}/role"
+        certificate_remote_execution: true
+        certificate_privatekey_type: ECDSA
+        certificate_privatekey_curve: P256
+
+    - name: keep the first role result
+      ansible.builtin.set_fact:
+        role1: "{{ certificate_output }}"
+
+    - name: certificate role, remote execution, ECDSA P256 (second run - must be idempotent)
+      ansible.builtin.include_role:
+        name: venafi.machine_identity.certificate
+      vars: *role_remote_vars
+
+    - name: read the curve of the role-generated key
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -c
+          - >-
+            import sys;
+            from cryptography.hazmat.primitives.serialization import load_pem_private_key as load;
+            key = load(open(sys.argv[1], 'rb').read(), None);
+            print(getattr(getattr(key, 'curve', None), 'name', type(key).__name__))
+          - "{{ smoke_out }}/role/role.smoke.example.key"
+      changed_when: false
+      register: role_key_curve
+
+    - name: assert role remote execution honours certificate_privatekey_curve
+      ansible.builtin.assert:
+        that:
+          - role1.changed
+          - not certificate_output.changed
+          - role_key_curve.stdout == 'secp256r1'
+        fail_msg: "role remote path produced a {{ role_key_curve.stdout }} key for P256 (curve not forwarded?)"
 
     - name: prepare a policy spec file
       ansible.builtin.copy:
@@ -236,6 +370,81 @@
           - nopk1.privatekey_filename == smoke_out ~ '/nopk.key'
         fail_msg: "default local CSR without privatekey_path did not write the derived key file"
 
+    # --- regression E: provided CSR without privatekey_path -> no derived key, idempotent -------
+    # The stock FakeConnection cannot sign a provided CSR; ../shims/sitecustomize.py makes it return
+    # cert.key=None like the real connectors do.
+    - name: create a user CSR (its key stays outside the module)
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -c
+          - |
+            import sys
+            from cryptography import x509
+            from cryptography.hazmat.primitives import hashes, serialization
+            from cryptography.hazmat.primitives.asymmetric import ec
+            from cryptography.x509.oid import NameOID
+            name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, u"csr.smoke.example")])
+            csr = x509.CertificateSigningRequestBuilder().subject_name(name).sign(
+                ec.generate_private_key(ec.SECP256R1()), hashes.SHA256())
+            open(sys.argv[1], "wb").write(csr.public_bytes(serialization.Encoding.PEM))
+          - "{{ smoke_out }}/csr.pem"
+        creates: "{{ smoke_out }}/csr.pem"
+
+    - name: enroll with the provided CSR (csr_path exists), no privatekey_path - run, rerun, check mode
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: csr.smoke.example
+        cert_path: "{{ smoke_out }}/csr.crt"
+        csr_path: "{{ smoke_out }}/csr.pem"
+        zone: ""
+      environment:
+        PYTHONPATH: "{{ playbook_dir }}/../shims"
+      check_mode: "{{ item == 'check' }}"
+      loop: [first, second, check]
+      register: csr_runs
+
+    - name: stat the would-be derived key path
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/csr.key"
+      register: csr_key
+
+    - name: assert provided CSR converges without a derived key
+      ansible.builtin.assert:
+        that:
+          - csr_runs.results[0].changed
+          - not csr_runs.results[1].changed
+          - not csr_runs.results[2].changed
+          - not csr_key.stat.exists
+        fail_msg: "provided CSR without privatekey_path is not idempotent (derived key path regression?)"
+
+    # --- regression G: PKCS#12 without privatekey_path -> key only inside the .p12 -------------
+    - name: enroll PKCS#12 without privatekey_path - run, rerun
+      venafi.machine_identity.venafi_certificate:
+        test_mode: true
+        common_name: p12.smoke.example
+        cert_path: "{{ smoke_out }}/p12.p12"
+        use_pkcs12_format: true
+        zone: ""
+      loop: [first, second]
+      register: p12_runs
+
+    - name: stat PKCS#12 outputs
+      ansible.builtin.stat:
+        path: "{{ smoke_out }}/{{ item }}"
+      loop: [p12.p12, p12.key]
+      register: p12_files
+
+    - name: assert PKCS#12 enroll is idempotent and writes no separate key file
+      ansible.builtin.assert:
+        that:
+          - p12_runs.results[0].changed
+          - not p12_runs.results[1].changed
+          - p12_files.results[0].stat.exists
+          - p12_files.results[0].stat.mode == '0600'
+          - not p12_files.results[1].stat.exists
+        fail_msg: "PKCS#12 without privatekey_path wrote an extra key file or is not idempotent"
+
     - name: smoke summary
       ansible.builtin.debug:
-        msg: "SMOKE PLAY PASSED: RSA/ECDSA/Ed25519 enroll+idempotency, default-CSR key write (with & without privatekey_path), policy absent no-crash, and all fail-fast paths OK."
+        msg: "SMOKE PLAY PASSED: RSA/ECDSA/Ed25519 enroll+idempotency, case-insensitive key parameters, role remote-execution curve, default-CSR key write (with & without privatekey_path), provided-CSR and PKCS#12 idempotency, policy absent no-crash, and all fail-fast paths OK."

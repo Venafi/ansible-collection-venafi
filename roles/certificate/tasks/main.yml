@@ -3,6 +3,7 @@
   ansible.builtin.include_vars:
     file: "{{ credentials_file }}"
     name: venafi
+  no_log: true
 
 - name: "Show execution mode"
   ansible.builtin.debug:
