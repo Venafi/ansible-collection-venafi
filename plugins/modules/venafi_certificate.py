@@ -109,12 +109,9 @@ options:
             - Curve name for the ECDSA private key algorithm.
             - Requires I(privatekey_type=ECDSA). Use C(ed25519) to request an Ed25519 key
               (needs C(vcert>=0.22.1)).
+            - One of C(P256), C(P384), C(P521) or C(ed25519), matched case-insensitively
+              (C(p256), C(P-256) and C(ED25519) are accepted too). Any other value fails the task.
         default: P521
-        choices:
-            - P256
-            - P384
-            - P521
-            - ed25519
         type: str
     privatekey_passphrase:
         description:
@@ -124,7 +121,13 @@ options:
     privatekey_path:
         description:
             - Path to the private key to use when signing the certificate signing request.
-            - If not set, the private key will be placed near certificate with key suffix.
+            - If not set, the private key will be placed near certificate with key suffix
+              (I(cert_path) with its extension replaced by C(.key)). This applies only when the key is generated
+              (I(csr_origin=local) or C(service)); it is not derived for a provided CSR (the key stays with your CSR)
+              or with I(use_pkcs12_format=true) (the key is stored inside the PKCS#12 file).
+            - Must not be the same file as I(cert_path) or I(chain_path).
+            - The private key and PKCS#12 files are written with mode C(0600) by default. When I(mode) is set, they
+              get it without any group or other permissions (for example C(0644) becomes C(0600)).
         default: null
         type: path
     privatekey_reuse:
@@ -145,10 +148,9 @@ options:
     privatekey_type:
         description:
             - Type of private key.
+            - One of C(RSA) or C(ECDSA), matched case-insensitively (C(EC) and C(ECC) are accepted
+              as C(ECDSA)). Any other value fails the task.
         default: RSA
-        choices:
-            - RSA
-            - ECDSA
         type: str
     renew:
         description:
@@ -364,6 +366,12 @@ F_VALIDITY_HOURS = "validity_hours"
 F_ISSUER_HINT = "issuer_hint"
 F_CUSTOM_FIELDS = "custom_fields"
 
+# Accepted privatekey_type / privatekey_curve values: normalized spelling -> canonical value.
+# Matched case-insensitively; the EC/ECC and P-256 style aliases follow the vcert Go SDK parsers
+# (certificate.KeyType.Set / EllipticCurve.Set).
+KEY_TYPES = {"RSA": "RSA", "ECDSA": "ECDSA", "EC": "ECDSA", "ECC": "ECDSA"}
+KEY_CURVES = {"p256": "P256", "p384": "P384", "p521": "P521", "ed25519": "ed25519"}
+
 
 def _normalize_curve(curve):
     """Normalize an EC curve/key label for case- and format-insensitive comparison
@@ -399,15 +407,9 @@ class VCertificate:
         self.chain_filename = module.params[F_CHAIN_PATH]
         self.csr_path = module.params[F_CSR_PATH]
         self.privatekey_filename = module.params[F_PK_PATH]
-        # Per the documented behavior ("If not set, the private key will be placed near certificate
-        # with key suffix"), derive a key path from the certificate path when none is supplied.
-        # Without this, a local/service CSR that generates a key would call _atomic_write(None, ...)
-        # and crash with a TypeError once serialize_private_key is set (VC-59232 follow-up).
-        if not self.privatekey_filename and self.certificate_filename:
-            self.privatekey_filename = "%s.key" % os.path.splitext(self.certificate_filename)[0]
 
-        self.privatekey_type = module.params[F_PK_TYPE]
-        self.privatekey_curve = module.params[F_PK_CURVE]
+        self.privatekey_type = self._canonical_key_param(F_PK_TYPE, KEY_TYPES, lambda v: str(v).upper())
+        self.privatekey_curve = self._canonical_key_param(F_PK_CURVE, KEY_CURVES, _normalize_curve)
         self.privatekey_size = module.params[F_PK_SIZE]
         self.privatekey_passphrase = module.params[F_PK_PASSPHRASE]
         self.privatekey_reuse = module.params[F_PK_REUSE]
@@ -439,6 +441,38 @@ class VCertificate:
         if self.csr_path is not None and os.path.exists(self.csr_path) and os.path.isfile(self.csr_path):
             self.csr_origin = CSR_ORIGIN_PROVIDED
 
+        # Per the documented behavior ("If not set, the private key will be placed near certificate
+        # with key suffix"), derive a key path from the certificate path when none is supplied and the
+        # module generates the key (local/service CSR). Not for a provided CSR: the backend returns no
+        # key, so a derived path would never be written and every run would re-enroll (the key stays
+        # with the user's CSR). Not for PKCS#12: the key is stored inside the .p12 file.
+        if not self.privatekey_filename and self.certificate_filename and \
+                self.csr_origin != CSR_ORIGIN_PROVIDED and not self.use_pkcs12:
+            self.privatekey_filename = "%s.key" % os.path.splitext(self.certificate_filename)[0]
+        # enroll() writes the key after the certificate and chain, so a shared file would destroy the
+        # certificate and every later run would fail to load it (and enroll a new one). Compare resolved
+        # paths so "./", ".." or a symlink cannot hide a shared file.
+        if self.privatekey_filename and os.path.realpath(self.privatekey_filename) in [
+                os.path.realpath(p) for p in (self.certificate_filename, self.chain_filename,
+                                              self._get_pkcs12_cert_path() if self.use_pkcs12 else None) if p]:
+            module.fail_json(msg="Private key path %s is the same file as the certificate or chain (when %s "
+                                 "is omitted it is derived from %s); set %s to a separate file"
+                                 % (self.privatekey_filename, F_PK_PATH, F_CERT_PATH, F_PK_PATH))
+
+    def _canonical_key_param(self, name, allowed, normalize):
+        """Return the canonical spelling of a key parameter (None when unset). The argspec declares
+        no choices for privatekey_type/privatekey_curve because Ansible matches choices
+        case-sensitively, which rejected the lowercase spellings that worked in 1.3.1 (e.g. 'p256',
+        'EC'). An invalid value still fails here, before any request is made or file written."""
+        value = self.module.params[name]
+        if value is None:
+            return None
+        canonical = allowed.get(normalize(value))
+        if canonical is None:
+            self.module.fail_json(msg="value of %s must be one of: %s (case-insensitive), got: %s"
+                                      % (name, ", ".join(sorted(set(allowed.values()))), value))
+        return canonical
+
     def check_dirs_existed(self):
         cert_dir = os.path.dirname(self.certificate_filename or "/a")
         key_dir = os.path.dirname(self.privatekey_filename or "/a")
@@ -461,8 +495,11 @@ class VCertificate:
             return False
         private_key = to_text(open(self.privatekey_filename, "rb").read())
 
-        r = CertificateRequest(private_key=private_key,
-                               key_password=self.privatekey_passphrase)
+        try:
+            r = CertificateRequest(private_key=private_key,
+                                   key_password=self.privatekey_passphrase)
+        except Exception as e:
+            self._fail_unreadable_private_key(e)
         key_type = {"RSA": "rsa", "ECDSA": "ec", "EC": "ec"}.get(self.privatekey_type)
         if key_type and key_type != r.key_type.key_type:
             return False
@@ -544,7 +581,8 @@ class VCertificate:
         else:
             self._atomic_write(self.certificate_filename, cert.full_chain)
 
-        if self.serialize_private_key and cert.key is not None:
+        # No key path with PKCS#12 and privatekey_path omitted: the key is already inside the .p12 file
+        if self.serialize_private_key and cert.key is not None and self.privatekey_filename:
             self._atomic_write(self.privatekey_filename, cert.key)
 
     def _get_key_type(self):
@@ -594,12 +632,18 @@ class VCertificate:
     def _check_and_update_permissions(self, path):
         file_args = self.module.load_file_common_arguments(self.module.params)
         file_args['path'] = path
+        secret = path == self.privatekey_filename or (self.use_pkcs12 and path == self.certificate_filename)
         # Default to mode 0600 for private keys and PKCS#12 files
-        if file_args.get('mode') is None:
-            if path == self.privatekey_filename or (self.use_pkcs12 and path == self.certificate_filename):
-                file_args['mode'] = '0600'
+        if secret and file_args.get('mode') is None:
+            file_args['mode'] = '0600'
         if self.module.set_fs_attributes_if_different(file_args, False):
             self.changed = True
+        # 'mode' is shared with the certificate (e.g. 0644): never leave group/other access on the key or
+        # PKCS#12 file. _check_file_permissions() rejects it, which re-enrolled the certificate on every run.
+        if secret:
+            perms = os.stat(path).st_mode & 0o7777
+            if perms & 0o077:
+                os.chmod(path, perms & ~0o077)
 
     @staticmethod
     def _check_dns_sans_correct(actual, required, optional):
@@ -709,6 +753,8 @@ class VCertificate:
         except OSError as exc:
             self.module.fail_json(
                 msg="Failed to read private key file: %s" % exc)
+        except Exception as e:
+            self._fail_unreadable_private_key(e)
 
         cert_public_key_pem = cert.public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
@@ -723,6 +769,12 @@ class VCertificate:
         if cert_public_key_pem != private_key_public_key_pem:
             return False
         return True
+
+    def _fail_unreadable_private_key(self, e):
+        # An encrypted key without (or with a wrong) passphrase, or a file that is not a PEM private key.
+        # Fail instead of reporting a key mismatch, which would re-enroll and overwrite the key file.
+        self.module.fail_json(msg="Failed to load private key file %s (wrong or missing %s, or not a PEM private "
+                                  "key): %s" % (self.privatekey_filename, F_PK_PASSPHRASE, e))
 
     def _check_files_permissions(self):
         files = (self.privatekey_filename, self.certificate_filename,
@@ -835,12 +887,12 @@ def main():
         custom_fields=dict(type='dict', required=False),
         issuer_hint=dict(type='str', choices=[DEFAULT, DIGICERT, ENTRUST, MICROSOFT], default=DEFAULT, required=False),
         path=dict(type='path', aliases=['cert_path'], required=True),
-        privatekey_curve=dict(type='str', required=False, choices=['P256', 'P384', 'P521', 'ed25519']),
+        privatekey_curve=dict(type='str', required=False, no_log=False),
         privatekey_passphrase=dict(type='str', no_log=True),
         privatekey_path=dict(type='path', required=False),
         privatekey_reuse=dict(type='bool', required=False, default=True),
         privatekey_size=dict(type='int', required=False, choices=[2048, 3072, 4096, 8192]),
-        privatekey_type=dict(type='str', required=False, choices=['RSA', 'ECDSA']),
+        privatekey_type=dict(type='str', required=False),
         renew=dict(type='bool', required=False, default=True),
         use_pkcs12_format=dict(type='bool', default=False, required=False),
         validity_hours=dict(type='int', required=False),

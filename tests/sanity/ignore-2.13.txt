@@ -6,4 +6,3 @@ plugins/modules/venafi_certificate_revoke.py validate-modules:missing-gplv3-lice
 plugins/modules/venafi_certificate.py import-3.9!skip
 plugins/modules/venafi_certificate.py validate-modules:import-error
 plugins/modules/venafi_certificate.py validate-modules:return-syntax-error
-plugins/modules/venafi_policy.py validate-modules:undocumented-parameter
