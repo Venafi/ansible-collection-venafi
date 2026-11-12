@@ -2,6 +2,10 @@
 
 ## Version History
 
+##### 1.4.1
+* Require `certifi>=2026.10.19` in `requirements.in` and lock `certifi==2026.10.23` in `requirements.txt`. Earlier certifi releases, including the previously locked 2026.5.20, still trust emSign ECC Root CA - G3, the root of the compromised eMudhra intermediate CAs, so Python code using the locked bundle accepted certificates forged with those intermediates.
+* Bumped the `vcert` dependency to `vcert>=0.23.0` in `requirements.in` and regenerated `requirements.txt` (`vcert==0.23.0`). vcert 0.23.0 itself requires `certifi>=2026.10.19`, so installing the Python dependencies with `pip install vcert ansible cryptography` also picks up the fixed bundle.
+
 ##### 1.4.0
 * Bumped the `vcert` dependency to `vcert>=0.22.1` in `requirements.in` and regenerated the hash-pinned `requirements.txt` lockfile (`vcert==0.22.1`). `vcert` 0.22.1 delivers, with no collection code change: NGTS (Strata Cloud Manager) service-generated CSR (`csr_origin: service`) enrollment on CIT-only zones — previously failed with `Invalid Zone [...]. The zone format is incorrect` [VC-59232]; working `test_mode: true` enrollment (a duplicate `read_zone_conf` in the fake connector previously raised `NotImplementedError`); tolerance of issuing templates that advertise unrepresentable key sizes/curves during `read_zone`; correct EC-curve casing so service-generated CSRs against curve-constrained templates no longer fail policy validation; and real Ed25519 key generation (an existing Ed25519 key no longer crashes key-type detection).
 * Fixed VC-59232 default local-CSR enrollment in `venafi_certificate`: a local CSR with no explicit `privatekey_type` now writes the generated private key to disk. Previously the key file was left unwritten, so the run failed validation with `Private key file does not contain a valid private key`. Also stopped duplicating the failure text when the module's `check()` and `validate()` both ran.

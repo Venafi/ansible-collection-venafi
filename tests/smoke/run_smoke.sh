@@ -13,13 +13,13 @@
 # Usage:
 #   tests/smoke/run_smoke.sh [path/to/venafi-machine_identity-X.Y.Z.tar.gz]
 #
-# Default tarball: ../../venafi-machine_identity-1.4.0.tar.gz relative to the repo root.
+# Default tarball: ../../venafi-machine_identity-1.4.1.tar.gz relative to the repo root.
 # Requires a Python 3.9-3.12 interpreter on PATH (3.9 matches the lockfile + CI most faithfully).
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-TARBALL="${1:-$REPO/../../venafi-machine_identity-1.4.0.tar.gz}"
+TARBALL="${1:-$REPO/../../venafi-machine_identity-1.4.1.tar.gz}"
 WORK="${SMOKE_WORK:-/tmp/venafi-mi-smoke-run}"
 
 filter() { grep -vE "urllib3 v2 only supports OpenSSL|NotOpenSSLWarning|warnings.warn" || true; }
@@ -59,7 +59,7 @@ if "$PY" -m pip install -r "$WORK/artifact/requirements.txt" 2>&1 | filter; then
 else
   echo "!! strict lock failed on Python $PYVER; falling back to a relaxed install so functional tests still run"
   record "strict-lock-install (requirements.txt)" FAIL
-  "$PY" -m pip install -q "vcert==${SMOKE_EXPECTED_VCERT:-0.22.1}" cryptography 2>&1 | filter
+  "$PY" -m pip install -q "vcert==${SMOKE_EXPECTED_VCERT:-0.23.0}" cryptography 2>&1 | filter
 fi
 "$PY" -m pip install -q "$ACORE" pytest 2>&1 | filter
 

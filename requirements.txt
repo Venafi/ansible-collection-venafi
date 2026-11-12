@@ -4,10 +4,13 @@
 #
 #    pip-compile --generate-hashes --output-file=requirements.txt requirements.in
 #
-certifi==2026.5.20 \
-    --hash=sha256:3c52e209ba0a4ad7aebe60436a4ab349c39e1e602e8c134221e546902ad25897 \
-    --hash=sha256:69dea482ab64caa7b9f6aba1c6bf48bb6a5448d1c0f1b17ab42ad8c763a5344d
-    # via requests
+certifi==2026.10.23 \
+    --hash=sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd \
+    --hash=sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
+    # via
+    #   -r requirements.in
+    #   requests
+    #   vcert
 cffi==2.0.0 \
     --hash=sha256:00bdf7acc5f795150faa6957054fbbca2439db2f775ce831222b66f192f03beb \
     --hash=sha256:07b271772c100085dd28b74fa0cd81c8fb1a3ba18b21e03d7c27f3436a10606b \
@@ -401,7 +404,7 @@ urllib3==2.6.3 \
     --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
     --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
     # via requests
-vcert==0.22.1 \
-    --hash=sha256:57837eba7672c4d26380eee530288ab2bb5a8be43e099ab1cc1756ee77c5fbfc \
-    --hash=sha256:64a8c341204176b72c23b8a75cec7b00df9f7a456580c85c9891f7b53d882a03
+vcert==0.23.0 \
+    --hash=sha256:583b5a7a35e713d177b78f9d74d4bfb4f931550768aef44087a6125f594108f6 \
+    --hash=sha256:75490a74a264130b5955a90cb121133ac1f53fa92d9b884121f5d4d5227d9a61
     # via -r requirements.in
