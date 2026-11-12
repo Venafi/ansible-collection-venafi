@@ -59,7 +59,7 @@ if "$PY" -m pip install -r "$WORK/artifact/requirements.txt" 2>&1 | filter; then
 else
   echo "!! strict lock failed on Python $PYVER; falling back to a relaxed install so functional tests still run"
   record "strict-lock-install (requirements.txt)" FAIL
-  "$PY" -m pip install -q "vcert==${SMOKE_EXPECTED_VCERT:-0.22.1}" cryptography 2>&1 | filter
+  "$PY" -m pip install -q "vcert==${SMOKE_EXPECTED_VCERT:-0.23.0}" cryptography 2>&1 | filter
 fi
 "$PY" -m pip install -q "$ACORE" pytest 2>&1 | filter
 
