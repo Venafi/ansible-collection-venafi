@@ -36,7 +36,7 @@ import pytest
 # --------------------------------------------------------------------------------------------
 ARTIFACT_DIR = os.environ.get("SMOKE_ARTIFACT_DIR")
 COLLECTIONS_PATH = os.environ.get("SMOKE_COLLECTIONS_PATH")
-EXPECTED_VERSION = os.environ.get("SMOKE_EXPECTED_VERSION", "1.4.0")
+EXPECTED_VERSION = os.environ.get("SMOKE_EXPECTED_VERSION", "1.4.1")
 EXPECTED_VCERT = os.environ.get("SMOKE_EXPECTED_VCERT", "0.22.1")
 
 MODULES = [

@@ -1,7 +1,7 @@
 # Smoke tests — `venafi.machine_identity` built artifact
 
 Release-gate smoke tests for a **built collection tarball** (e.g.
-`venafi-machine_identity-1.4.0.tar.gz`). They stand up a throwaway virtualenv, install the
+`venafi-machine_identity-1.4.1.tar.gz`). They stand up a throwaway virtualenv, install the
 artifact's *exact* hash-pinned `requirements.txt`, install the collection, and exercise it
 end-to-end on the **fake/test backend** — no CyberArk backend, credentials, or network.
 
@@ -9,7 +9,7 @@ end-to-end on the **fake/test backend** — no CyberArk backend, credentials, or
 
 ```sh
 tests/smoke/run_smoke.sh [path/to/venafi-machine_identity-X.Y.Z.tar.gz]
-# default tarball: ../../venafi-machine_identity-1.4.0.tar.gz (workspace root)
+# default tarball: ../../venafi-machine_identity-1.4.1.tar.gz (workspace root)
 ```
 
 Requires a **Python 3.9–3.12** interpreter on `PATH` (3.9 matches the lockfile + CI most
