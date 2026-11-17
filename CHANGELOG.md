@@ -2,6 +2,13 @@
 
 ## Version History
 
+##### 1.4.2
+* `ansible-test sanity` now passes on ansible-core 2.15 through 2.21, as needed for Red Hat Automation Hub certification:
+  * `venafi_certificate` defines fallback values for the `vcert` CSR-origin constants when `vcert` can't be imported, so the module loads and reports the missing library instead of failing with `NameError: name 'CSR_ORIGIN_LOCAL' is not defined`.
+  * Fixed five `RETURN` entries in `venafi_certificate` that used `type: string` instead of `type: str`.
+  * Added `tests/sanity/ignore-2.16.txt` to `ignore-2.21.txt`, and trimmed `ignore-2.15.txt`, to only the `missing-gplv3-license` entries (the collection is Apache-2.0 licensed).
+* Re-enabled the `ansible-test sanity` GitHub workflow and changed its matrix from ansible-core 2.13–2.15 to 2.15–2.21, with a matching Python version for each.
+
 ##### 1.4.1
 * Require `certifi>=2026.10.19` in `requirements.in` and lock `certifi==2026.10.23` in `requirements.txt`. Earlier certifi releases, including the previously locked 2026.5.20, still trust emSign ECC Root CA - G3, the root of the compromised eMudhra intermediate CAs, so Python code using the locked bundle accepted certificates forged with those intermediates.
 * Bumped the `vcert` dependency to `vcert>=0.23.0` in `requirements.in` and regenerated `requirements.txt` (`vcert==0.23.0`). vcert 0.23.0 itself requires `certifi>=2026.10.19`, so installing the Python dependencies with `pip install vcert ansible cryptography` also picks up the fixed bundle.

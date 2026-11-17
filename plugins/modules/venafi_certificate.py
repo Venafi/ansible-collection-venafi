@@ -41,18 +41,18 @@ options:
             - If certificate will expire in less hours than this value, module will try to renew it.
         default: 72
         type: int
-    cert_path:
+    path:
         description:
             - Remote absolute path where the generated certificate file should be created or is already located.
         required: true
         type: path
+        aliases:
+            - cert_path
     chain_option:
         description:
             - Specify ordering certificates in chain.
+            - Use C(first) to put the root certificate first, or C(last) to put it last.
         default: last
-        choices:
-            - first
-            - last
         type: str
     chain_path:
         description:
@@ -111,7 +111,7 @@ options:
               (needs C(vcert>=0.22.1)).
             - One of C(P256), C(P384), C(P521) or C(ed25519), matched case-insensitively
               (C(p256), C(P-256) and C(ED25519) are accepted too). Any other value fails the task.
-        default: P521
+            - When not set and I(privatekey_type=ECDSA), C(P521) is used.
         type: str
     privatekey_passphrase:
         description:
@@ -138,7 +138,7 @@ options:
     privatekey_size:
         description:
             - Size (in bits) of the TLS/SSL key to generate. Used only for RSA.
-        default: 2048
+            - When not set and I(privatekey_type=RSA), C(2048) is used.
         choices:
             - 2048
             - 3072
@@ -150,7 +150,8 @@ options:
             - Type of private key.
             - One of C(RSA) or C(ECDSA), matched case-insensitively (C(EC) and C(ECC) are accepted
               as C(ECDSA)). Any other value fails the task.
-        default: RSA
+            - When not set, the module doesn't choose a key type; the zone's defaults apply, otherwise an
+              RSA 2048-bit key is generated.
         type: str
     renew:
         description:
@@ -175,7 +176,7 @@ options:
             - For CyberArk Certificate Manager, Self-Hosted this is a policy folder DN (e.g. C(example\\policy)).
             - For CyberArk Certificate Manager, SaaS this is C(ApplicationName\\IssuingTemplateAlias).
             - For NGTS (Strata Cloud Manager) this is the Certificate Issuing Template alias only.
-        required: true
+        default: ''
         type: str
 extends_documentation_fragment:
     - files
@@ -273,7 +274,7 @@ RETURN = '''
 privatekey_filename:
     description: Path to the TLS/SSL private key the CSR was generated for.
     returned: changed or success
-    type: string
+    type: str
     sample: /etc/ssl/private/venafi.example.pem
 
 privatekey_size:
@@ -285,25 +286,25 @@ privatekey_size:
 privatekey_curve:
     description: ECDSA curve of generated private key. Variants are "P521", "P384", "P256", "ed25519".
     returned: changed or success
-    type: string
+    type: str
     sample: "P521"
 
 privatekey_type:
     description: Algorithm used to generate the TLS/SSL private key. Variants are RSA or ECDSA.
     returned: changed or success
-    type: string
+    type: str
     sample: RSA
 
 certificate_filename:
     description: Path to the signed certificate.
     returned: changed or success
-    type: string
+    type: str
     sample: /etc/ssl/www.venafi.example.pem
 
 chain_filename:
     description: Path to the chain of CA certificates that link the certificate to a trust anchor.
     returned: changed or success
-    type: string
+    type: str
     sample: /etc/ssl/www.venafi.example_chain.pem
 '''
 
@@ -328,6 +329,11 @@ try:
     from vcert import CertificateRequest, KeyType, CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED, CustomField
 except ImportError:
     HAS_VCERT = False
+    # The argument spec in main() uses these before the HAS_VCERT check, so define vcert's values
+    # here to let the module load (and report the missing library) when vcert isn't installed.
+    CSR_ORIGIN_LOCAL = 'local'
+    CSR_ORIGIN_SERVICE = 'service'
+    CSR_ORIGIN_PROVIDED = 'provided'
 try:
     from cryptography import x509
     from cryptography.hazmat.backends import default_backend
@@ -880,7 +886,7 @@ def main():
         before_expired_hours=dict(type='int', required=False, default=72),
         chain_option=dict(type='str', required=False, default='last'),
         chain_path=dict(type='path', required=False),
-        common_name=dict(aliases=['CN', 'commonName', 'common_name'], type='str', required=True),
+        common_name=dict(aliases=['CN', 'commonName'], type='str', required=True),
         csr_origin=dict(type='str', choices=[CSR_ORIGIN_LOCAL, CSR_ORIGIN_SERVICE, CSR_ORIGIN_PROVIDED],
                         default=CSR_ORIGIN_LOCAL),
         csr_path=dict(type='path', required=False),
