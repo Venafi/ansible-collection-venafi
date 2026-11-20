@@ -545,6 +545,14 @@ class TestRegressions:
         assert stat.S_IMODE((tmp_path / "c.key").stat().st_mode) == 0o600
         assert stat.S_IMODE((tmp_path / "c.crt").stat().st_mode) == 0o644
 
+    def test_j_path_option_name_works_like_cert_path_alias(self, tmp_path):
+        """The option is named "path" (alias "cert_path"). Up to 1.4.1 the module read
+        module.params["cert_path"], so a playbook using "path" failed with KeyError."""
+        res, err, issued = run_certificate(tmp_path, {"path": str(tmp_path / "p.crt")})
+        assert "Traceback" not in err, err
+        assert res is not None and res.get("changed") is True and not res.get("failed"), (err, res)
+        assert (tmp_path / "p.crt").exists() and issued == 1
+
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))

@@ -138,7 +138,7 @@ class TestKeyPathDerivation(unittest.TestCase):
 
     def _build(self, issued=None, **extra):
         params = {
-            "cert_path": self.cert,
+            "path": self.cert,
             "common_name": CN,
             "before_expired_hours": 72,
             "test_mode": True,          # FakeConnection at construction; replaced by a mock below

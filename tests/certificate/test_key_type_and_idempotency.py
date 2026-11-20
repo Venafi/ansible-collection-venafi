@@ -72,7 +72,7 @@ class FakeModule(object):
 
 
 BASE_PARAMS = {
-    "cert_path": CERT_PATH,
+    "path": CERT_PATH,
     "chain_path": CHAIN_PATH,
     "privatekey_path": PRIV_PATH,
     "common_name": "kt.venafi.example.com",
@@ -343,6 +343,24 @@ class TestKeyParamCasingMain(unittest.TestCase):
         self.assertFalse(res["failed"], res)
         self.assertTrue(res["changed"], res)
         self.assertIsInstance(_load_key(self.key), ed25519.Ed25519PrivateKey)
+
+    def test_path_option_name_enrolls(self):
+        """VC-65953: the option is named "path". Up to 1.4.1 the module read
+        module.params["cert_path"], so a playbook that set "path" failed with KeyError."""
+        args = self._args()
+        args["path"] = args.pop("cert_path")
+        res = _run_main(args)
+        self.assertFalse(res["failed"], res)
+        self.assertTrue(res["changed"], res)
+        self.assertEqual(res["certificate_filename"], self.cert)
+        self.assertTrue(os.path.exists(self.cert))
+
+    def test_cert_path_alias_still_enrolls(self):
+        """VC-65953: the cert_path alias keeps working after the module reads "path"."""
+        res = _run_main(self._args())
+        self.assertFalse(res["failed"], res)
+        self.assertTrue(res["changed"], res)
+        self.assertEqual(res["certificate_filename"], self.cert)
 
     def test_invalid_curve_fails_before_any_write(self):
         res = _run_main(self._args(privatekey_type="ECDSA", privatekey_curve="P999"))

@@ -24,7 +24,7 @@ class FakeModule(object):
         self.exit_code = None
         self.warn = str
         self.params = defaultdict(lambda: None)
-        self.params["cert_path"] = CERT_PATH
+        self.params["path"] = CERT_PATH
         self.params["chain_path"] = CHAIN_PATH
         self.params["privatekey_path"] = PRIV_PATH
         self.params["common_name"] = asset.common_name
