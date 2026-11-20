@@ -36,7 +36,8 @@ import pytest
 # --------------------------------------------------------------------------------------------
 ARTIFACT_DIR = os.environ.get("SMOKE_ARTIFACT_DIR")
 COLLECTIONS_PATH = os.environ.get("SMOKE_COLLECTIONS_PATH")
-EXPECTED_VERSION = os.environ.get("SMOKE_EXPECTED_VERSION", "1.4.1")
+EXPECTED_VERSION = os.environ.get("SMOKE_EXPECTED_VERSION", "1.5.0")
+# Minimum vcert version that requirements.txt must declare (vcert>=...).
 EXPECTED_VCERT = os.environ.get("SMOKE_EXPECTED_VCERT", "0.23.0")
 
 MODULES = [
@@ -48,7 +49,8 @@ MODULES = [
 ]
 
 STRAY_PATTERNS = (".claude", ".github", "CLAUDE.md", ".DS_Store", ".pytest_cache", "galaxy.yml",
-                  "__pycache__", ".pyc", "vault-password", "_credentials")
+                  "__pycache__", ".pyc", "vault-password", "_credentials",
+                  "test-requirements.txt", "requirements.in")
 
 needs_artifact = pytest.mark.skipif(
     not ARTIFACT_DIR or not os.path.isdir(ARTIFACT_DIR),
@@ -197,23 +199,26 @@ class TestPackaging:
         assert info["namespace"] == "venafi"
         assert info["name"] == "machine_identity"
 
-    def test_requirements_pin_and_hashes(self):
-        """requirements.txt must pin the expected vcert and be a hash lock (every == line has
-        an accompanying --hash)."""
+    def test_requirements_ranges_only(self):
+        """requirements.txt must declare the vcert floor and use >= minimums only: no pins,
+        upper bounds or hashes (Red Hat certification; ansible-builder installs this file)."""
         with open(os.path.join(ARTIFACT_DIR, "requirements.txt")) as fh:
-            txt = fh.read()
-        assert "vcert==%s" % EXPECTED_VCERT in txt
-        assert "--hash=sha256:" in txt
-        # every pinned top-level requirement line should carry at least one hash somewhere after
-        assert txt.count("--hash=sha256:") >= 20  # full transitive lock, not a stub
+            reqs = [line.strip() for line in fh if line.strip() and not line.strip().startswith("#")]
+        assert "vcert>=%s" % EXPECTED_VCERT in reqs, reqs
+        assert any(r.startswith("certifi>=") for r in reqs), reqs
+        bad = [r for r in reqs if any(op in r for op in ("==", "<", "~=", "!=", "--hash"))]
+        assert not bad, "pinned or capped requirements: %s" % bad
 
-    def test_requirements_in_floor(self):
-        with open(os.path.join(ARTIFACT_DIR, "requirements.in")) as fh:
-            assert "vcert>=" in fh.read()
+    def test_tests_dir_ships_only_config(self):
+        """Only tests/config.yml is shipped (Automation Hub's sanity run uses it); the sanity
+        ignore files and the unit and smoke tests stay out of the tarball."""
+        shipped = sorted({e["name"].split("/")[1] for e in self._files_json()["files"]
+                          if e["name"].startswith("tests/") and e["name"].count("/") >= 1})
+        assert shipped == ["config.yml"], shipped
 
     def test_runtime_requires_ansible(self):
         with open(os.path.join(ARTIFACT_DIR, "meta", "runtime.yml")) as fh:
-            assert "requires_ansible" in fh.read()
+            assert "requires_ansible: '>=2.16.0'" in fh.read()
 
 
 # --------------------------------------------------------------------------------------------

@@ -1,0 +1,5 @@
+---
+# ansible-test configuration. The modules import the vcert SDK, which requires Python 3.9 or
+# later, so sanity tests for module code skip older Python versions.
+modules:
+  python_requires: '>=3.9'

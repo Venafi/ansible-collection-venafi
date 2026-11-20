@@ -11,16 +11,25 @@ permissions:
 
 jobs:
   sync:
-    name: requirements.txt in sync with requirements.in
+    name: test-requirements.txt in sync with requirements.txt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: requirements.txt has no pins or upper bounds
+        # Red Hat certification: ansible-builder installs requirements.txt into execution
+        # environments, so it may only use >= minimums.
+        run: |
+          if grep -v -E '^[[:space:]]*(#|$)' requirements.txt | grep -E '==|<|~=|!=|--hash'; then
+            echo "::error::requirements.txt must only use >= minimum versions." \
+                 "Put exact pins in test-requirements.txt (make lock)."
+            exit 1
+          fi
       - name: Regenerate lockfile
         run: make lock
       - name: Compare with committed lockfile
         run: |
-          if ! git diff --exit-code -- requirements.txt; then
-            echo "::error::requirements.txt is out of sync with requirements.in." \
-                 "Run 'make lock' locally and commit the updated requirements.txt."
+          if ! git diff --exit-code -- test-requirements.txt; then
+            echo "::error::test-requirements.txt is out of sync with requirements.txt." \
+                 "Run 'make lock' locally and commit the updated test-requirements.txt."
             exit 1
           fi

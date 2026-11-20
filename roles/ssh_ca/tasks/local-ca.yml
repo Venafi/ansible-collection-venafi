@@ -5,7 +5,7 @@
   ansible.builtin.file:
     path: "{{ ssh_ca_dir }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   delegate_to: localhost
 
 - name: "Retrieve CA public key on local host"
@@ -42,5 +42,5 @@
   ansible.builtin.copy:
     src: "{{ ssh_ca_public_key_path }}"
     dest: "{{ ssh_ca_remote_public_key_path if ssh_ca_remote_public_key_path else ssh_ca_public_key_path }}"
-    mode: 0644
+    mode: "0644"
   when: ssh_ca_pub_key.stat.exists

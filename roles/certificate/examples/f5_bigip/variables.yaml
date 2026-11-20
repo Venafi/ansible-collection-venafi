@@ -1,3 +1,4 @@
+---
 f5_address: "yourf5bigip"
 f5_username: "youruser"
 f5_password: "yourpassword"
@@ -16,7 +17,7 @@ f5_pool_members:
     port: 8002
   - host: 192.168.6.201
     port: 8003
-    
+
 cert_name: "{{ test_site.name }}.crt"
 key_name: "{{ test_site.name }}.key"
 chain_name: "{{ test_site.name }}-ca-bundle.crt"
@@ -26,4 +27,4 @@ f5_provider:
   server_port: 443
   user: "{{ f5_username }}"
   password: "{{ f5_password }}"
-  validate_certs: no
+  validate_certs: false

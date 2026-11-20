@@ -7,7 +7,7 @@
   ansible.builtin.file:
     path: "{{ certificate_cert_dir }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   delegate_to: localhost
 
 - name: "Enroll CyberArk certificate on local host"
@@ -53,26 +53,26 @@
   ansible.builtin.copy:
     src: "{{ certificate_cert_path }}"
     dest: "{{ certificate_remote_cert_path if certificate_remote_cert_path is defined else certificate_cert_path }}"
-    mode: 0644
+    mode: "0644"
   when: not certificate_pkcs12_format
 
 - name: "Copy CyberArk PKCS12 certificate file to remote location {{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
   ansible.builtin.copy:
     src: "{{ certificate_cert_path_pkcs12 }}"
     dest: "{{ certificate_remote_cert_path_pkcs12 if certificate_remote_cert_path_pkcs12 is defined else certificate_cert_path_pkcs12 }}"
-    mode: 0600
+    mode: "0600"
   when: certificate_pkcs12_format
 
 - name: "Copy CyberArk private key file to remote location {{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
   ansible.builtin.copy:
     src: "{{ certificate_privatekey_path }}"
     dest: "{{ certificate_remote_privatekey_path if certificate_remote_privatekey_path else certificate_privatekey_path }}"
-    mode: 0600
+    mode: "0600"
   when: certificate_copy_private_key_to_remote
 
 - name: "Copy CyberArk certificate chain file to remote location {{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
   ansible.builtin.copy:
     src: "{{ certificate_chain_path }}"
     dest: "{{ certificate_remote_chain_path if certificate_remote_chain_path else certificate_chain_path }}"
-    mode: 0644
+    mode: "0644"
   when: certificate_chain_path is defined and not certificate_pkcs12_format
