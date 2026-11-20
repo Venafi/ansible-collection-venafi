@@ -2,6 +2,9 @@
 
 ## Version History
 
+##### Unreleased
+* Fixed `venafi_certificate` failing with `KeyError: 'cert_path'` when the certificate path was set with `path`, the option's actual name. Only the `cert_path` alias worked before; both work now. The documentation now lists the option as `path`, with `cert_path` as an alias, matching the module's argument spec. Playbooks that use `cert_path` keep working. [VC-65953]
+
 ##### 1.4.1
 * Require `certifi>=2026.10.19` in `requirements.in` and lock `certifi==2026.10.23` in `requirements.txt`. Earlier certifi releases, including the previously locked 2026.5.20, still trust emSign ECC Root CA - G3, the root of the compromised eMudhra intermediate CAs, so Python code using the locked bundle accepted certificates forged with those intermediates.
 * Bumped the `vcert` dependency to `vcert>=0.23.0` in `requirements.in` and regenerated `requirements.txt` (`vcert==0.23.0`). vcert 0.23.0 itself requires `certifi>=2026.10.19`, so installing the Python dependencies with `pip install vcert ansible cryptography` also picks up the fixed bundle.

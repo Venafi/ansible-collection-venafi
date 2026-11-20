@@ -41,11 +41,13 @@ options:
             - If certificate will expire in less hours than this value, module will try to renew it.
         default: 72
         type: int
-    cert_path:
+    path:
         description:
             - Remote absolute path where the generated certificate file should be created or is already located.
         required: true
         type: path
+        aliases:
+            - cert_path
     chain_option:
         description:
             - Specify ordering certificates in chain.
@@ -346,6 +348,7 @@ STRING_CERT_FILE_NOT_EXISTS = "Certificate file does not exist"
 STRING_BAD_PERMISSIONS = "Insufficient file permissions"
 
 F_ZONE = "zone"
+F_PATH = "path"
 F_CERT_PATH = "cert_path"
 F_CHAIN_PATH = "chain_path"
 F_PK_PATH = "privatekey_path"
@@ -403,7 +406,8 @@ class VCertificate:
         self.issuer_hint = get_issuer_hint(hint)
         self.custom_fields = module.params[F_CUSTOM_FIELDS]  # type: dict
 
-        self.certificate_filename = module.params[F_CERT_PATH]
+        # Ansible stores the value under the option's name (path), whichever alias the playbook used.
+        self.certificate_filename = module.params[F_PATH]
         self.chain_filename = module.params[F_CHAIN_PATH]
         self.csr_path = module.params[F_CSR_PATH]
         self.privatekey_filename = module.params[F_PK_PATH]

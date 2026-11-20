@@ -74,7 +74,7 @@ def _rm(*paths):
 
 
 BASE_PARAMS = {
-    "cert_path": CERT_PATH,
+    "path": CERT_PATH,
     "chain_path": CHAIN_PATH,
     "privatekey_path": PRIV_PATH,
     "common_name": "vc59232.venafi.example.com",
