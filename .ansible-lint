@@ -1,34 +1,30 @@
 ---
-# ansible-lint configuration for the venafi.machine_identity collection.
+# ansible-lint configuration for the venafi.machine_identity collection, aligned with the Red Hat
+# partner certification rules:
+# https://docs.ansible.com/projects/partner-certification-requirements/static-analysis/
 #
-# This collection is a thin wrapper around the vcert Python SDK. A few ansible-lint
-# defaults are intentionally scoped down here because they either conflict with the
-# collection's other (authoritative) CI gate or would require breaking changes:
+#   * profile — production, the profile Automation Hub certification uses.
+#   * exclude_paths — only directories that hold no collection content and are not shipped in
+#     the tarball (CI, unit and smoke tests). Content directories (plugins/, roles/) are never
+#     excluded.
+#   * skip_list — var-naming[no-role-prefix] only. The role variables (for example
+#     credentials_file, ssh_*, set_policy_run_once) are the public interface of the roles;
+#     renaming them would break existing playbooks. Red Hat accepts skipping var-naming for
+#     collections past 1.0.0.
+#   * warn_list — no-log-password, as Red Hat recommends.
 #
-#   * exclude_paths — CI/test/vendored assets that are not shipped in the collection,
-#     including the third-party (F5/Citrix/IIS) sample playbooks that reference modules
-#     from collections not installed in the lint environment.
-#   * sanity — the entries in tests/sanity/ignore-*.txt (validate-modules:import-error,
-#     import-3.x!skip, return-syntax-error) are REQUIRED by the
-#     `ansible-test sanity` workflow: the modules import the vcert SDK, which is not
-#     importable in the sanity/lint environment. Removing them to satisfy ansible-lint
-#     would turn the real sanity gate red.
-#   * var-naming[no-role-prefix] — the role variables (e.g. credentials_file, ssh_*,
-#     set_policy_run_once) are the public interface of these roles and are used by every
-#     shipped example and downstream playbook; renaming them is a breaking change.
-#   * name[casing] / fqcn[action-core] / yaml[indentation] — pre-existing cosmetic debt in
-#     the module EXAMPLES docstrings; tracked for a separate docs cleanup.
+# The F5, Citrix ADC and IIS example playbooks under roles/certificate/examples/ call modules
+# from collections this collection does not depend on; .ansible-lint-ignore lists them.
+profile: production
 
 exclude_paths:
   - .github/
   - tests/
   - molecule/
   - changelogs/
-  - roles/certificate/examples/
 
 skip_list:
-  - sanity
   - var-naming[no-role-prefix]
-  - name[casing]
-  - fqcn[action-core]
-  - yaml[indentation]
+
+warn_list:
+  - no-log-password

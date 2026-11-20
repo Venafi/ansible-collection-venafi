@@ -17,7 +17,7 @@ Later in this example, you'll generate a certificate for the `demo-citrix.venafi
 
 > **NOTE** In our example, we suggest that you use the round-robin balancing method. But keep in mind that there are [other methods](https://docs.citrix.com/en-us/citrix-adc/current-release/load-balancing/load-balancing-customizing-algorithms.html) that might be more suitable for your specific use case.
 
-![AnsibleVenafi](venafi_ansible_role.png)
+![AnsibleVenafi](https://raw.githubusercontent.com/Venafi/ansible-collection-venafi/main/roles/certificate/examples/citrix_adc/venafi_ansible_role.png)
 
 ## Prerequisites
 
@@ -290,7 +290,7 @@ Now that HTTP services have been created, Ansible must create a virtual IP addre
 
 ## Step 6: Executing the playbook
 
-After you finish the [playbook](citrix_create_playbook.yaml), use the following command to run it:
+After you finish the [playbook](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/citrix_adc/citrix_create_playbook.yaml), use the following command to run it:
 
 ```bash
 ansible-playbook citrix_create_playbook.yaml --ask-vault-pass
@@ -302,7 +302,7 @@ If done correctly, you should see output similar to the following:
 
 ## Reversing the changes performed
 
-In this example, we include a [playbook that lets you revert the changes made by running citrix_create_playbook.yaml](citrix_delete_playbook.yaml). Use the following command to run it:
+In this example, we include a [playbook that lets you revert the changes made by running citrix_create_playbook.yaml](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/citrix_adc/citrix_delete_playbook.yaml). Use the following command to run it:
 
 ```bash
 ansible-playbook citrix_delete_playbook.yaml

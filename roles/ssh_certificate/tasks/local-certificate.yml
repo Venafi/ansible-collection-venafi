@@ -6,7 +6,7 @@
   ansible.builtin.file:
     path: "{{ ssh_cert_dir }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   delegate_to: localhost
 
 - name: "Enroll CyberArk SSH certificate on local host"
@@ -51,18 +51,18 @@
   ansible.builtin.copy:
     src: "{{ ssh_cert_path }}"
     dest: "{{ ssh_remote_cert_path if ssh_remote_cert_path else ssh_cert_path }}"
-    mode: 0644
+    mode: "0644"
 
 - name: "Copy CyberArk public key file to remote location {{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
   ansible.builtin.copy:
     src: "{{ ssh_public_key_path }}"
     dest: "{{ ssh_remote_public_key_path if ssh_remote_public_key_path else ssh_public_key_path }}"
-    mode: 0644
+    mode: "0644"
   when: ssh_copy_public_key_to_remote
 
 - name: "Copy CyberArk private key file to remote location {{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
   ansible.builtin.copy:
     src: "{{ ssh_private_key_path }}"
     dest: "{{ ssh_remote_private_key_path if ssh_remote_private_key_path else ssh_private_key_path }}"
-    mode: 0600
+    mode: "0600"
   when: ssh_copy_private_key_to_remote and ssh_certificate_private_key_stat.stat.exists

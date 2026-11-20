@@ -2,8 +2,9 @@
 #
 # Smoke test for a BUILT venafi.machine_identity collection tarball.
 #
-# Stands up a throwaway virtualenv, installs the artifact's EXACT hash-pinned requirements.txt
-# (vcert + cryptography) plus ansible-core, installs the collection tarball, and runs:
+# Stands up a throwaway virtualenv, installs the repo's hash-pinned test-requirements.txt and then
+# the artifact's requirements.txt (minimum versions, as ansible-builder would), plus ansible-core,
+# installs the collection tarball, and runs:
 #   1. ansible-doc for every module           (DOCUMENTATION / doc_fragments parse)
 #   2. tests/smoke/playbooks/smoke.yml         (functional enroll + idempotency + fail-fast)
 #   3. tests/smoke/test_artifact.py            (packaging integrity + behaviour + regression gates)
@@ -13,13 +14,13 @@
 # Usage:
 #   tests/smoke/run_smoke.sh [path/to/venafi-machine_identity-X.Y.Z.tar.gz]
 #
-# Default tarball: ../../venafi-machine_identity-1.4.1.tar.gz relative to the repo root.
-# Requires a Python 3.9-3.12 interpreter on PATH (3.9 matches the lockfile + CI most faithfully).
+# Default tarball: ../../venafi-machine_identity-1.5.0.tar.gz relative to the repo root.
+# Requires a Python 3.10-3.12 interpreter on PATH (ansible-core 2.16 needs 3.10 or later; 3.10 matches the lockfile).
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-TARBALL="${1:-$REPO/../../venafi-machine_identity-1.4.1.tar.gz}"
+TARBALL="${1:-$REPO/../../venafi-machine_identity-1.5.0.tar.gz}"
 WORK="${SMOKE_WORK:-/tmp/venafi-mi-smoke-run}"
 
 filter() { grep -vE "urllib3 v2 only supports OpenSSL|NotOpenSSLWarning|warnings.warn" || true; }
@@ -32,19 +33,19 @@ if [[ ! -f "$TARBALL" ]]; then echo "ERROR: tarball not found: $TARBALL" >&2; ex
 TARBALL="$(cd "$(dirname "$TARBALL")" && pwd)/$(basename "$TARBALL")"
 say "Target artifact: $TARBALL"
 
-# ---- pick a Python 3.9-3.12 -----------------------------------------------------------------
+# ---- pick a Python 3.10-3.12 ----------------------------------------------------------------
 PYBIN=""
-for cand in python3.9 python3.10 python3.11 python3.12 /usr/bin/python3 python3; do
+for cand in python3.10 python3.11 python3.12 /usr/bin/python3 python3; do
   command -v "$cand" >/dev/null 2>&1 || [[ -x "$cand" ]] || continue
   ver="$("$cand" -c 'import sys;print("%d.%d"%sys.version_info[:2])' 2>/dev/null)" || continue
-  case "$ver" in 3.9|3.10|3.11|3.12) PYBIN="$cand"; PYVER="$ver"; break;; esac
+  case "$ver" in 3.10|3.11|3.12) PYBIN="$cand"; PYVER="$ver"; break;; esac
 done
 if [[ -z "$PYBIN" ]]; then
-  echo "ERROR: need a Python 3.9-3.12 interpreter (ansible-core does not support 3.13/3.14 as controller here)" >&2
+  echo "ERROR: need a Python 3.10-3.12 interpreter (ansible-core 2.16+ controller; 3.13/3.14 not used here)" >&2
   exit 2
 fi
 say "Using $PYBIN (Python $PYVER)"
-if [[ "$PYVER" == "3.9" ]]; then ACORE='ansible-core>=2.15,<2.16'; else ACORE='ansible-core'; fi
+ACORE='ansible-core>=2.16'
 
 # ---- build env --------------------------------------------------------------------------------
 rm -rf "$WORK"; mkdir -p "$WORK/artifact"
@@ -53,13 +54,19 @@ tar xzf "$TARBALL" -C "$WORK/artifact"
 PY="$WORK/venv/bin/python"
 "$PY" -m pip install -q --upgrade pip wheel 2>&1 | filter
 
-say "Install artifact's hash-pinned requirements.txt (strict lock)"
-if "$PY" -m pip install -r "$WORK/artifact/requirements.txt" 2>&1 | filter; then
-  record "strict-lock-install (requirements.txt)" PASS
+say "Install the repo's hash-pinned test-requirements.txt (strict lock)"
+if "$PY" -m pip install --require-hashes -r "$REPO/test-requirements.txt" 2>&1 | filter; then
+  record "strict-lock-install (test-requirements.txt)" PASS
 else
-  echo "!! strict lock failed on Python $PYVER; falling back to a relaxed install so functional tests still run"
-  record "strict-lock-install (requirements.txt)" FAIL
-  "$PY" -m pip install -q "vcert==${SMOKE_EXPECTED_VCERT:-0.23.0}" cryptography 2>&1 | filter
+  echo "!! strict lock failed on Python $PYVER; continuing with the artifact's requirements.txt"
+  record "strict-lock-install (test-requirements.txt)" FAIL
+fi
+
+say "Install the artifact's requirements.txt (minimum versions, as ansible-builder does)"
+if "$PY" -m pip install -r "$WORK/artifact/requirements.txt" 2>&1 | filter; then
+  record "requirements-install (requirements.txt)" PASS
+else
+  record "requirements-install (requirements.txt)" FAIL
 fi
 "$PY" -m pip install -q "$ACORE" pytest 2>&1 | filter
 

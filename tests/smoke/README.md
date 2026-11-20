@@ -1,19 +1,20 @@
 # Smoke tests — `venafi.machine_identity` built artifact
 
 Release-gate smoke tests for a **built collection tarball** (e.g.
-`venafi-machine_identity-1.4.1.tar.gz`). They stand up a throwaway virtualenv, install the
-artifact's *exact* hash-pinned `requirements.txt`, install the collection, and exercise it
+`venafi-machine_identity-1.5.0.tar.gz`). They stand up a throwaway virtualenv, install the
+repo's hash-pinned `test-requirements.txt` and the artifact's `requirements.txt` (minimum
+versions, as `ansible-builder` installs it), install the collection, and exercise it
 end-to-end on the **fake/test backend** — no CyberArk backend, credentials, or network.
 
 ## Run
 
 ```sh
 tests/smoke/run_smoke.sh [path/to/venafi-machine_identity-X.Y.Z.tar.gz]
-# default tarball: ../../venafi-machine_identity-1.4.1.tar.gz (workspace root)
+# default tarball: ../../venafi-machine_identity-1.5.0.tar.gz (workspace root)
 ```
 
-Requires a **Python 3.9–3.12** interpreter on `PATH` (3.9 matches the lockfile + CI most
-faithfully; ansible-core does not support 3.13/3.14 as a controller here). Docker is not needed.
+Requires a **Python 3.10–3.12** interpreter on `PATH` (ansible-core 2.16 needs 3.10 or later
+on the controller; 3.10 matches the lockfile). Docker is not needed.
 
 Run the pytest layer alone against an already-installed collection:
 
@@ -27,7 +28,7 @@ pytest tests/smoke/test_artifact.py -v
 
 | Layer | File | Checks |
 |---|---|---|
-| Packaging integrity | `test_artifact.py::TestPackaging` | FILES.json sha256 all match; MANIFEST↔FILES.json checksum; **no stray dev files** (`.claude`/`.github`/`CLAUDE.md`/`.DS_Store`/`galaxy.yml`/`__pycache__`); version; `vcert==` pin + hash lock; `requires_ansible` |
+| Packaging integrity | `test_artifact.py::TestPackaging` | FILES.json sha256 all match; MANIFEST↔FILES.json checksum; **no stray dev files** (`.claude`/`.github`/`CLAUDE.md`/`.DS_Store`/`galaxy.yml`/`__pycache__`/`test-requirements.txt`); version; `requirements.txt` uses `>=` minimums only (vcert floor, no pins, caps or hashes); only `tests/config.yml` shipped from `tests/`; `requires_ansible: '>=2.16.0'` |
 | Install / interface | `run_smoke.sh` | `ansible-galaxy collection install` (checksum verify), `ansible-doc` for all 5 modules |
 | Installed behaviour | `test_artifact.py::TestInstalledBehaviour` | deprecation-warning gating (token-only silent, user/password warns), NGTS credential guards, revocation reason codes, key-type defaults (ECDSA→P521, RSA→2048, ed25519) |
 | Functional enroll | `playbooks/smoke.yml` + `test_artifact.py::TestFunctionalEnroll` | RSA/ECDSA-P256/Ed25519 enroll, **idempotency** (incl. curve-casing), case-insensitive key parameters (`EC`/`p256`/`ED25519` accepted, idempotent across casings and in check mode), default local-CSR key write (VC-59232), provided-CSR and PKCS#12 idempotency, invalid type/curve error, `certificate` role remote execution honours `certificate_privatekey_curve`, policy `test_mode` fail-fast, SSH modules reject NGTS |

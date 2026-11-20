@@ -9,6 +9,13 @@ rules:
     max-spaces-inside: 1
     level: error
   line-length: disable
+  # Required by ansible-lint, which reuses this file for its yaml rule.
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
   # NOTE(retr0h): Templates no longer fail this lint rule.
   #               Uncomment if running old Molecule templates.
   # truthy: disable

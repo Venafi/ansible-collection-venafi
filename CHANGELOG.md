@@ -2,8 +2,33 @@
 
 ## Version History
 
-##### Unreleased
+##### 1.5.0
+This release prepares the collection for Red Hat Ansible Automation Hub certification.
+
+Breaking changes:
+* The collection now requires ansible-core 2.16 or later (`requires_ansible: '>=2.16.0'` in `meta/runtime.yml`). Ansible Automation Platform no longer supports ansible-core 2.15. If you use ansible-core 2.15, stay on 1.4.1.
+* `requirements.txt` now lists minimum versions (`vcert>=0.23.0`, `cryptography>=42.0.2`, `certifi>=2026.10.19`) instead of exact, hash-pinned versions, because `ansible-builder` installs it into execution environments, where pins conflict with other collections. The hash-pinned lockfile is now `test-requirements.txt` in the GitHub repository. It is not included in the collection. If you ran `pip install --require-hashes -r requirements.txt`, use `test-requirements.txt` from the repository instead. `requirements.in` is removed; `make lock` now generates `test-requirements.txt` from `requirements.txt`.
+
+Fixes:
 * Fixed `venafi_certificate` failing with `KeyError: 'cert_path'` when the certificate path was set with `path`, the option's actual name. Only the `cert_path` alias worked before; both work now. The documentation now lists the option as `path`, with `cert_path` as an alias, matching the module's argument spec. Playbooks that use `cert_path` keep working. [VC-65953]
+* `venafi_certificate` defines fallback values for the `vcert` CSR-origin constants when `vcert` can't be imported, so the module loads and reports the missing library instead of failing with `NameError: name 'CSR_ORIGIN_LOCAL' is not defined`.
+* `venafi_certificate` documentation now matches the module's argument spec, as `ansible-test sanity` requires:
+  * The `chain_option` values (`first`, `last`) and the default key settings (`RSA`, `2048`, `P521`) are described in the option text instead of as `choices` and `default`, because the module does not enforce them.
+  * `zone` is documented with its real default, an empty string, instead of as required.
+  * Five `RETURN` entries use `type: str` instead of `type: string`.
+  * Removed `common_name` from its own list of aliases.
+* Role tasks quote file modes (for example `mode: "0644"`). The permissions are unchanged.
+
+Documentation:
+* README: replaced relative links with full URLs, so they work on Automation Hub; removed `pip install ansible` instructions in favour of the Ansible installation guide; listed the Python and ansible-core requirements; renamed Version History to Changelog and linked this file (the old link pointed to a file that did not exist); and removed the Community Supported badge, which contradicted the support statement. The role and example READMEs also use full URLs now.
+* The `venafi_certificate` examples use capitalised task names and fully qualified module names (`venafi.machine_identity.venafi_certificate`, `ansible.builtin.debug`).
+
+CI and packaging:
+* The `ansible-test sanity` GitHub workflow is re-enabled and tests ansible-core 2.16 to 2.21 on Python 3.12. The sanity ignore files for 2.13 to 2.15 are removed; the files for 2.16 to 2.21 list only the `missing-gplv3-license` entries (the collection is Apache-2.0 licensed).
+* Added Red Hat's partner certification checks (galaxy-importer, `ansible-lint` with the production profile, and `ansible-test sanity`) as a GitHub workflow.
+* `.ansible-lint` now uses the production profile and no longer excludes content under `roles/` or skips rules Red Hat enforces. `.ansible-lint-ignore` lists only the F5, Citrix ADC and IIS example playbooks, which call modules from other collections.
+* The collection now includes `tests/config.yml`, which declares Python 3.9 as the minimum for module code, for Automation Hub's sanity run. The rest of `tests/` is still excluded.
+* The lockfile check fails if `requirements.txt` contains pins or upper bounds.
 
 ##### 1.4.1
 * Require `certifi>=2026.10.19` in `requirements.in` and lock `certifi==2026.10.23` in `requirements.txt`. Earlier certifi releases, including the previously locked 2026.5.20, still trust emSign ECC Root CA - G3, the root of the compromised eMudhra intermediate CAs, so Python code using the locked bundle accepted certificates forged with those intermediates.

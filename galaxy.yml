@@ -9,7 +9,7 @@ namespace: venafi
 name: machine_identity
 
 # The version of the collection. Must be compatible with semantic versioning.
-version: 1.4.1
+version: 1.5.0
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -66,8 +66,20 @@ issues: https://github.com/Venafi/ansible-collection-venafi/issues
 # uses 'fnmatch' to match the files or directories. Some directories and files like 'galaxy.yml', '*.pyc', '*.retry',
 # and '.git' are always filtered
 build_ignore:
-  - 'tests/*'
+  # Ship only tests/config.yml (minimum Python for module code), which Automation Hub's
+  # ansible-test sanity run uses. The sanity ignore files only cover validate-modules, which
+  # Automation Hub does not run, so shipping them would only add importer warnings.
+  # Add new test directories here.
+  - 'tests/sanity'
+  - 'tests/certificate'
+  - 'tests/common_utils'
+  - 'tests/policy'
+  - 'tests/revocation'
+  - 'tests/smoke'
+  - 'tests/ssh_ca'
+  - 'tests/ssh_certificate'
   - '*.tar.gz'
+  - 'test-requirements.txt'
   - 'docs/*'
   - 'molecule/*'
   - 'venv/*'
