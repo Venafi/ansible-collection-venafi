@@ -1,0 +1,6 @@
+---
+# ansible-test configuration. The modules need Python 3.10 or later (Python 3.9 is end of life,
+# and current releases of their dependencies require 3.10), so sanity tests for module code
+# skip older Python versions.
+modules:
+  python_requires: '>=3.10'

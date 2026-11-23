@@ -91,15 +91,15 @@ install:
 uninstall:
 	rm -rf ~/.ansible/collections/ansible_collections/venafi
 
-# Regenerate requirements.txt from requirements.in using pip-compile.
-# Uses python:3.9 to match the CI target version so resolutions are reproducible.
+# Regenerate the hash-pinned test-requirements.txt lockfile from the requirements.txt ranges
+# using pip-compile. Uses python:3.10, the lowest Python that ansible-core 2.16 supports on the
+# controller, so the lock installs on every supported version and resolutions are reproducible.
 # pip-tools is pinned so hash output is stable across contributors.
-# chown at the end so the regenerated file is owned by the host user, not
-# root.
+# chown at the end so the regenerated file is owned by the host user, not root.
 lock:
-	docker run --rm -v "$(CURDIR)":/work -w /work python:3.9 \
-	  sh -c "pip install 'pip-tools==7.4.1' && \
-	         pip-compile --generate-hashes --output-file=requirements.txt requirements.in && \
-	         chown $$(id -u):$$(id -g) requirements.txt"
+	docker run --rm -v "$(CURDIR)":/work -w /work python:3.10 \
+	  sh -c "pip install 'pip-tools==7.7.0' && \
+	         pip-compile --generate-hashes --output-file=test-requirements.txt requirements.txt && \
+	         chown $$(id -u):$$(id -g) test-requirements.txt"
 
 .PHONY: lock

@@ -14,7 +14,7 @@ In this Infrastructure as Code example we use [RedHat Ansible](https://www.ansib
 
 Later in this example, you'll generate a certificate for `demo-iis.venafi.example` using Ansible and the `venafi.machine_identity.certificate` role to request and retrieve it from either _CyberArk Certificate Manager, Self-Hosted_ or _CyberArk Certificate Manager, SaaS_. Then you'll create a [PKCS#12](https://en.wikipedia.org/wiki/PKCS_12) file using the certificate and private key retrieved from CyberArk, copy it to the target Windows server and then import it into the certificate store. Finally, you'll configure IIS to use the certificate for HTTPS. Take a look at the diagram below for an overview of what we're going to create.
 
-![Using Venafi with Ansible to obtain and provision certificates for IIS](diagram_venafi_ansible_iis.png)
+![Using Venafi with Ansible to obtain and provision certificates for IIS](https://raw.githubusercontent.com/Venafi/ansible-collection-venafi/main/roles/certificate/examples/microsoft_iis/diagram_venafi_ansible_iis.png)
 
 ## Prerequisites
 
@@ -187,11 +187,11 @@ After copying the PKCS#12 file to the Windows server, we need to add it to the W
 
 The next step is to create a HTTPS binding on the IIS web server by using the thumbprint value (returned by the previous task), to specify the certificate we want to use (from the Windows certificate store), the name of the IIS web site, the protocol, IP address and port (the `Add HTTPS a binding SNI` task will be executed by Ansible if the `iis_sni` variable is defined in the variables file; if it is not, the `Add a HTTPS binding` task will be executed).
 
-Click [here](iis_create_playbook.yaml) to download a complete `iis_create_playbook.yaml` example file.
+Click [here](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/microsoft_iis/iis_create_playbook.yaml) to download a complete `iis_create_playbook.yaml` example file.
 
 ### Execute the playbook
 
-After you finish the [playbook](iis_create_playbook.yaml), use the following command to run it:
+After you finish the [playbook](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/microsoft_iis/iis_create_playbook.yaml), use the following command to run it:
 
 ```bash
 ansible-playbook -i hosts iis_create_playbook.yaml --ask-vault-pass
@@ -200,7 +200,7 @@ ansible-playbook -i hosts iis_create_playbook.yaml --ask-vault-pass
 
 ### Reversing the changes performed
 
-In this example, we include a [playbook that lets you revert the changes made by running iis_create_playbook.yaml](iis_delete_playbook.yaml). Use the following command to run it:
+In this example, we include a [playbook that lets you revert the changes made by running iis_create_playbook.yaml](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/microsoft_iis/iis_delete_playbook.yaml). Use the following command to run it:
 
 ```bash
 ansible-playbook -i hosts iis_delete_playbook.yaml

@@ -1,0 +1,25 @@
+---
+# Red Hat partner certification checks: galaxy-importer, ansible-lint with the production
+# profile, and ansible-test sanity on the ansible-core branches Automation Hub uses.
+# Copied from https://github.com/ansible-collections/partner-certification-checker
+# (.github/workflows/certification.yml). The reusable workflow is pinned to the commit of
+# release v6.0.0, which runs galaxy-importer 0.4.39 and ansible-lint 26.4.0.
+name: Run collection certification checks
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+concurrency:
+  group: cert-ver-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  call:
+    uses: ansible-collections/partner-certification-checker/.github/workflows/certification-reusable.yml@0b3575fff9a50e8057134e01862c52450648c3fc # v6.0.0

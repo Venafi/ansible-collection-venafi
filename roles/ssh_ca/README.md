@@ -2,8 +2,8 @@
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![CyberArk Certificate Manager, Self-Hosted 17.3+ & CyberArk Certificate Manager, SaaS](https://img.shields.io/badge/Compatibility-Certificate%20Manager%2C%20Self--Hosted_17.3%2B_%26Certificate%20Manager%2C%20SaaS-f9a90c)
 _**This open source project is community-supported.** To report a problem or share an idea, use
-**[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
-In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
+**[Issues](https://github.com/Venafi/ansible-collection-venafi/issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
+In addition, use **[Pull Requests](https://github.com/Venafi/ansible-collection-venafi/pulls)** to contribute actual bug fixes or proposed enhancements.
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
@@ -16,11 +16,9 @@ issuance enterprise wide.
 
 ## Requirements
 
-Review the [CyberArk](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
-prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.12.5 or higher) using `pip`:
-```sh
-pip install ansible vcert --upgrade
-```
+Review the [VCert-Python prerequisites](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
+for your CyberArk Certificate Manager platform, then install the requirements listed in the
+[collection README](https://github.com/Venafi/ansible-collection-venafi/blob/main/README.md#requirements).
 
 ## Using with Ansible Galaxy
 
@@ -108,7 +106,7 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `ssh_ca_guid`                   | The GUID of the SSH Certificate Authority whom the public key is being retrieved.<br/>**Required** if `ssh_ca_template` not provided                                                      |
    | `ssh_ca_windows_cert`           | Indicates that the public key is intended to be used in a Windows environment.<br/>Break Lines and Carriage Returns will be adjusted accordingly to work on Windows.<br/>Default: `false` |
 
-   Defaults are defined in the [defaults/main.yml](defaults/main.yml) file.
+   Defaults are defined in the [defaults/main.yml](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/ssh_ca/defaults/main.yml) file.
    
 ## Sample Playbook
 
@@ -135,6 +133,6 @@ For more information about using roles go to https://docs.ansible.com/ansible/la
 
 Copyright &copy; Venafi, Inc. and CyberArk Software Ltd. ("CyberArk")
 
-This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
+This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](https://github.com/Venafi/ansible-collection-venafi/blob/main/LICENSE) for the full license text.
 
 Please direct questions/comments to mis-opensource@cyberark.com.

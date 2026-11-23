@@ -2,8 +2,8 @@
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![CyberArk Certificate Manager, Self-Hosted 17.3+ & CyberArk Certificate Manager, SaaS](https://img.shields.io/badge/Compatibility-Certificate%20Manager%2C%20Self--Hosted_17.3%2B_%26Certificate%20Manager%2C%20SaaS-f9a90c)
 _**This open source project is community-supported.** To report a problem or share an idea, use
-**[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
-In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
+**[Issues](https://github.com/Venafi/ansible-collection-venafi/issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
+In addition, use **[Pull Requests](https://github.com/Venafi/ansible-collection-venafi/pulls)** to contribute actual bug fixes or proposed enhancements.
 We welcome and appreciate all contributions. Got questions or want to discuss something with our team?
 **[Join us on Slack](https://join.slack.com/t/venafi-integrations/shared_invite/zt-i8fwc379-kDJlmzU8OiIQOJFSwiA~dg)**!_
 
@@ -20,19 +20,17 @@ security policy and provides visibility into certificate issuance enterprise wid
 >
 >Products | Available integration examples...
 >:------: | --------
->[<img src="examples/logo_tile_f5.png?raw=true" alt="F5 BIG-IP" width="40" height="40" />](examples/f5_bigip/README.md) | [How to configure secure application delivery using F5 BIG-IP and the CyberArk Role Ansible](examples/f5_bigip/README.md)
->[<img src="examples/logo_tile_citrix.png?raw=true" alt="Citrix ADC" width="40" height="40" />](examples/citrix_adc/README.md)  | [How to configure secure application delivery using Citrix ADC and the CyberkArk Role for Ansible](examples/citrix_adc/README.md)
->[<img src="examples/logo_tile_iis.png?raw=true" alt="Microsoft IIS" width="40" height="40" />](examples/microsoft_iis/README.md)  | [How to secure and configure Microsoft IIS using the CyberArk Role for Ansible](examples/microsoft_iis/README.md)
+>[<img src="https://raw.githubusercontent.com/Venafi/ansible-collection-venafi/main/roles/certificate/examples/logo_tile_f5.png" alt="F5 BIG-IP" width="40" height="40" />](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/f5_bigip/README.md) | [How to configure secure application delivery using F5 BIG-IP and the CyberArk Role Ansible](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/f5_bigip/README.md)
+>[<img src="https://raw.githubusercontent.com/Venafi/ansible-collection-venafi/main/roles/certificate/examples/logo_tile_citrix.png" alt="Citrix ADC" width="40" height="40" />](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/citrix_adc/README.md)  | [How to configure secure application delivery using Citrix ADC and the CyberkArk Role for Ansible](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/citrix_adc/README.md)
+>[<img src="https://raw.githubusercontent.com/Venafi/ansible-collection-venafi/main/roles/certificate/examples/logo_tile_iis.png" alt="Microsoft IIS" width="40" height="40" />](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/microsoft_iis/README.md)  | [How to secure and configure Microsoft IIS using the CyberArk Role for Ansible](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/examples/microsoft_iis/README.md)
 >
 >**NOTE** If you don't see an example for a product you use, check back later. We're working hard to add more integration examples.
 
 ## Requirements
 
-Review the [CyberArk](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
-prerequisites, then install Ansible and [VCert-Python](https://github.com/Venafi/vcert-python) (v0.11.2 or higher) using `pip`:
-```sh
-pip install ansible vcert --upgrade
-```
+Review the [VCert-Python prerequisites](https://github.com/Venafi/vcert-python#prerequisites-for-using-with-trust-protection-platform)
+for your CyberArk Certificate Manager platform, then install the requirements listed in the
+[collection README](https://github.com/Venafi/ansible-collection-venafi/blob/main/README.md#requirements).
 
 ## Using with Ansible Galaxy
 
@@ -225,12 +223,12 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
    | `certificate_renew`                      | Specifies whether to renew the certificate if it is within the "before_expired_hours" window when the playbook is run<br/>Default: `true`                                                                                                                                                                                                    |
    | `certificate_validity_hours`             | Indicates the validity period of the certificate before it expires                                                                                                                                                                                                                                                                           |
 
-   Defaults are defined in the [defaults/main.yml](defaults/main.yml) file.
+   Defaults are defined in the [defaults/main.yml](https://github.com/Venafi/ansible-collection-venafi/blob/main/roles/certificate/defaults/main.yml) file.
 
 ## Preparing a Docker demo environment for running Ansible 
 
 1. For this demo, move to the root folder of this collection.
-1. Prepare the demo environment.  If you want to use your own inventory, update the [tests/certificate/inventory](../../tests/certificate/inventory) file.  
+1. Prepare the demo environment.  If you want to use your own inventory, update the [tests/certificate/inventory](https://github.com/Venafi/ansible-collection-venafi/blob/main/tests/certificate/inventory) file.  
 
     1. To run our test/demo playbook you'll need the Docker provisioning role.
        Download it into the `/tests/certificate/roles/provision_docker` directory: 
@@ -292,8 +290,8 @@ For more information about Ansible Galaxy, go to https://galaxy.ansible.com/docs
       certificate_copy_private_key_to_remote: true
 ```
 
-For playbook examples look into [venafi-playbook-example.yml](../../tests/certificate/venafi-playbook-example.yml) file.
-For role examples look into [venafi-role-playbook-example.yml](../../tests/certificate/venafi-role-playbook-example.yml) file
+For playbook examples look into [venafi-playbook-example.yml](https://github.com/Venafi/ansible-collection-venafi/blob/main/tests/certificate/venafi-playbook-example.yml) file.
+For role examples look into [venafi-role-playbook-example.yml](https://github.com/Venafi/ansible-collection-venafi/blob/main/tests/certificate/venafi-role-playbook-example.yml) file
 
 For more information about using roles go to https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html
 
@@ -301,6 +299,6 @@ For more information about using roles go to https://docs.ansible.com/ansible/la
 
 Copyright &copy; Venafi inc, and CyberArk Software Ltd. ("CyberArk")
 
-This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](../../LICENSE) for the full license text.
+This solution is licensed under the Apache License, Version 2.0. See [`LICENSE`](https://github.com/Venafi/ansible-collection-venafi/blob/main/LICENSE) for the full license text.
 
 Please direct questions/comments to mis-opensource@cyberark.com.
