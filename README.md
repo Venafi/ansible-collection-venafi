@@ -12,9 +12,9 @@ If you like this collection, please give us a rating on [Ansible Galaxy](https:/
 ## Requirements
 
 - **ansible-core 2.16 or later.** The minimum is declared in `meta/runtime.yml`.
-- **Python 3.9 or later** on the hosts that run the modules (the Ansible controller, or the
-  managed hosts when remote execution is enabled), because the modules use
-  [VCert-Python](https://github.com/Venafi/vcert-python), which requires it.
+- **Python 3.10 or later** on the hosts that run the modules (the Ansible controller, or the
+  managed hosts when remote execution is enabled). Python 3.9 is end of life, and current
+  releases of the modules' dependencies, such as `requests` and `urllib3`, require Python 3.10.
 - **Python packages:** [VCert-Python](https://github.com/Venafi/vcert-python), `cryptography` and
   `certifi`, at the minimum versions listed in the collection's
   [requirements.txt](https://github.com/Venafi/ansible-collection-venafi/blob/main/requirements.txt).

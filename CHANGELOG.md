@@ -7,6 +7,7 @@ This release prepares the collection for Red Hat Ansible Automation Hub certific
 
 Breaking changes:
 * The collection now requires ansible-core 2.16 or later (`requires_ansible: '>=2.16.0'` in `meta/runtime.yml`). Ansible Automation Platform no longer supports ansible-core 2.15. If you use ansible-core 2.15, stay on 1.4.1.
+* The modules now require Python 3.10 or later on the hosts that run them (the controller, or managed hosts with remote execution). Python 3.9 is end of life, and current releases of dependencies such as `requests` and `urllib3` require 3.10. If you need Python 3.9, stay on 1.4.1.
 * `requirements.txt` now lists minimum versions (`vcert>=0.23.0`, `cryptography>=42.0.2`, `certifi>=2026.10.19`) instead of exact, hash-pinned versions, because `ansible-builder` installs it into execution environments, where pins conflict with other collections. The hash-pinned lockfile is now `test-requirements.txt` in the GitHub repository. It is not included in the collection. If you ran `pip install --require-hashes -r requirements.txt`, use `test-requirements.txt` from the repository instead. `requirements.in` is removed; `make lock` now generates `test-requirements.txt` from `requirements.txt`.
 
 Fixes:
@@ -27,7 +28,7 @@ CI and packaging:
 * The `ansible-test sanity` GitHub workflow is re-enabled and tests ansible-core 2.16 to 2.21 on Python 3.12. The sanity ignore files for 2.13 to 2.15 are removed; the files for 2.16 to 2.21 list only the `missing-gplv3-license` entries (the collection is Apache-2.0 licensed).
 * Added Red Hat's partner certification checks (galaxy-importer, `ansible-lint` with the production profile, and `ansible-test sanity`) as a GitHub workflow.
 * `.ansible-lint` now uses the production profile and no longer excludes content under `roles/` or skips rules Red Hat enforces. `.ansible-lint-ignore` lists only the F5, Citrix ADC and IIS example playbooks, which call modules from other collections.
-* The collection now includes `tests/config.yml`, which declares Python 3.9 as the minimum for module code, for Automation Hub's sanity run. The rest of `tests/` is still excluded.
+* The collection now includes `tests/config.yml`, which declares Python 3.10 as the minimum for module code, for Automation Hub's sanity run. The rest of `tests/` is still excluded.
 * The lockfile check fails if `requirements.txt` contains pins or upper bounds.
 
 ##### 1.4.1
